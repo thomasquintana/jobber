@@ -16,3 +16,32 @@
 # under the License.
 #
 # Thomas Quintana <quintana.thomas@gmail.com>
+
+from multiprocessing import cpu_count
+from urlparse import urlparse
+
+from jobber.constants import JOBBER_CTX_HOSTNAME, JOBBER_CTX_PORT, \
+                             JOBBER_PORT, JOBBER_SCHEME
+from jobber.errors import ACTOR_REF_INVALID_PATH, ACTOR_REF_INVALID_SCHEME
+
+class ActorSystem(object):
+  def __init__(self):
+    super(ActorSystem, self).__init__()
+
+  def _validate_path(self, context, path):
+    if len(path.path) == 0:
+      raise ValueError(ACTOR_REF_INVALID_PATH)
+    if not path.scheme == JOBBER_SCHEME:
+      raise ValueError(ACTOR_REF_INVALID_SCHEME)
+    path_tokens = ["%s://" % JOBBER_SCHEME]
+    if path.hostname is not None:
+      path_tokens.append(path.hostname)
+    else:
+      path_tokens.append(context.get(JOBBER_CTX_HOSTNAME, "localhost"))
+    path_tokens.append(":")
+    if path.port is not None:
+      path_tokens.append(str(path.port))
+    else:
+      path_tokens.append(str(context.get(JOBBER_CTX_PORT, JOBBER_PORT)))
+    path_tokens.append(path)
+    return urlparse(''.join(path_tokens))

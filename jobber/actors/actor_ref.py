@@ -17,49 +17,51 @@
 #
 # Thomas Quintana <quintana.thomas@gmail.com>
 
-from urlparse import urlparse
+import logging
 
-from jobber.constants import JOBBER_CTX_HOSTNAME, JOBBER_CTX_PORT, \
-                             JOBBER_PORT, JOBBER_SCHEME
-from jobber.errors import ACTOR_REF_INVALID_PATH, ACTOR_REF_INVALID_SCHEME
+from uuid import uuid4
 
-class ActorRef(object):
+from exceptions import InterruptException
+from executable import Task
+
+class ActorRef(Task):
   '''
   
   Positional Arguments:
+  actor   -- A reference to the actor or a proxy actor.
   context -- A dictionary container holding the context state.
   path    -- A valid url path to the referenced actor.
   '''
 
-  def __init__(self, actor, context, path):
+  def __init__(self, actor, path, scheduler):
     super(ActorRef, self).__init__()
+    self._logger = logging.getLogger(self.fqn)
     self._actor = actor
-    self._context = context
-    self._path = self._validate(context, urlparse(path))
+    self._mailbox = list()
+    self._path = path
+    self._scheduler = scheduler
+    self._urn = uuid4()
 
-  def _validate(self, context, path):
-    if len(path.path) == 0:
-      raise ValueError(ACTOR_REF_INVALID_PATH)
-    if not path.scheme == JOBBER_SCHEME:
-      raise ValueError(ACTOR_REF_INVALID_SCHEME)
-    path_tokens = ["%s://" % JOBBER_SCHEME]
-    if path.hostname is not None:
-      path_tokens.append(path.hostname)
-    else:
-      path_tokens.append(context.get(JOBBER_CTX_HOSTNAME, "localhost"))
-    path_tokens.append(":")
-    if path.port is not None:
-      path_tokens.append(str(path.port))
-    else:
-      path_tokens.append(str(context.get(JOBBER_CTX_PORT, JOBBER_PORT)))
-    path_tokens.append(path)
-    return urlparse(''.join(path_tokens))
+  def __getattr__(self, name):
+    if name == "path":
+      return self._path.geturl()
+    elif name == "urn":
+      return self._urn
 
-  def host(self):
-    return self._path.hostname
+  def run(self):
+    while len(self._mailbox) > 0:
+      message = self._mailbox.pop(0)
+      try:
+        self._actor.receive(message)
+      except Exception as exception:
+        self._logger.exception(exception)
+      # Try to return control of the processor to the scheduler if
+      # the scheduler fires an InterruptException we hand over control
+      # and if it doesn't we keep processing messages.
+      try:
+        self._scheduler.interrupt()
+      except InterruptException:
+        break
 
-  def path(self):
-    return self._path.path if len(self._path.path) > 0 else None
-
-  def port(self):
-    return self._path.port
+  def tell(self, message):
+    self._mailbox.append(message)

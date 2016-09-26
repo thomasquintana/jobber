@@ -20,3 +20,6 @@
 class Actor(object):
   def __init__(self):
     super(Actor, self).__init__()
+
+  def receive(self, message):
+    pass
