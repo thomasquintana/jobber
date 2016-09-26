@@ -22,4 +22,8 @@ class Actor(object):
     super(Actor, self).__init__()
 
   def receive(self, message):
+    '''
+    This method processes incoming messages.
+    '''
+
     pass

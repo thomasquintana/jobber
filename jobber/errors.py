@@ -20,11 +20,3 @@
 ACTOR_REF_INVALID_PATH = "Invalid path. Please provide a valid actor path."
 ACTOR_REF_INVALID_SCHEME = "Invalid scheme. Please use jobber:// as your " \
                            "scheme."
-
-GREEN_THREAD_INV_NAME_TYPE = "Invalid type for name. It must be a string."
-GREEN_THREAD_INV_PRIORITY_TYPE = "Invalid type for priority. It must be " \
-                                     "an int."
-GREEN_THREAD_INV_PREV_PROC_TIME_TYPE = "Invalid type for prev_proc_time. It " \
-                                       "must be an float."
-GREEN_THREAD_INV_TOTAL_PROC_TIME_TYPE = "Invalid type for total_proc_time. " \
-                                        "It must be an float."

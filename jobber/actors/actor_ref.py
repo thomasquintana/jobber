@@ -28,9 +28,9 @@ class ActorRef(Task):
   '''
   
   Positional Arguments:
-  actor   -- A reference to the actor or a proxy actor.
-  context -- A dictionary container holding the context state.
-  path    -- A valid url path to the referenced actor.
+  actor   --   A reference to the actor or a proxy actor.
+  path    --   A valid url path to the referenced actor.
+  scheduler -- The scheduler responsible for the exection of this actor.
   '''
 
   def __init__(self, actor, path, scheduler):
