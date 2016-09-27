@@ -1,3 +1,4 @@
+
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -24,11 +25,18 @@ from sortedcontainers import SortedDict
 from jobber.actors.exceptions import InterruptException
 from jobber.utils import object_fqn
 
-class Scheduler(object):
-  def __init__(self):
+class ActorScheduler(object):
+  def __init__(self, *args **kwargs):
     super(Scheduler, self).__init__()
     self._logger = logging.getLogger(object_fqn(self))
-    self._tasks = SortedDict()
+    self._idle_tasks = SortedDict()
+    self._ready_tasks = SortedDict()
 
-  def interrupt(self, task):
-    raise InterruptException()
+  def interrupt(self):
+    pass
+
+  def schedule(self, task):
+    pass
+
+  def unschedule(self, task):
+    pass

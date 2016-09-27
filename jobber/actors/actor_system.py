@@ -45,3 +45,6 @@ class ActorSystem(object):
       path_tokens.append(str(context.get(JOBBER_CTX_PORT, JOBBER_PORT)))
     path_tokens.append(path)
     return urlparse(''.join(path_tokens))
+
+  def bootstrap(self):
+    pass

@@ -22,3 +22,8 @@ JOBBER_SCHEME       = "jobber"
 
 JOBBER_CTX_HOSTNAME = "jobber_hostname"
 JOBBER_CTX_PORT     = "jobber_port"
+
+ACTOR_PROCESSOR_COMPLETED = "Completed"
+ACTOR_PROCESSOR_IDLE      = "Idle"
+ACTOR_PROCESSOR_READY     = "Ready"
+ACTOR_PROCESSOR_RUNNING   = "Running"

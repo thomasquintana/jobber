@@ -17,89 +17,31 @@
 #
 # Thomas Quintana <quintana.thomas@gmail.com>
 
-import logging
-
-from uuid import uuid4
-
-from jobber.actors.exceptions import InterruptException
-from jobber.actors.executable import Task
-from jobber.actors.messages.poison_pill import PoisonPill
-from jobber.utils import object_fqn
-
-class ActorRef(Task):
+class ActorRef(object):
   '''
   
   Positional Arguments:
-  actor   --   A reference to the actor or a proxy actor.
-  path    --   A valid url path to the referenced actor.
-  scheduler -- The scheduler responsible for the exection of this actor.
+  mailbox   -- A reference to the referenced actor's mailbox.
+  path      -- A valid url path to the referenced actor.
+  uuid      -- A universally unique identifier for the referenced actor.
   '''
 
-  Completed = "Completed"
-  Idle = "Idle"
-  Ready = "Ready"
-  Running = "Running"
-
-  def __init__(self, actor, path, scheduler):
+  def __init__(self, mailbox, path, uuid):
     super(ActorRef, self).__init__()
-    self._logger = logging.getLogger(object_fqn(self))
-    self._actor = actor
-    self._mailbox = list()
+    self._mailbox = mailbox
     self._path = path
-    self._scheduler = scheduler
-    self._state = ActorRef.Idle
-    self._urn = uuid4()
+    self._urn = uuid
     # NOTE: This is typically bad and should make your linter complain.
     # Monkey patch the actor.
-    self._actor._actor_ref = self
+    self._actor.actor_ref = self
     # Schedule ourselves for execution.
     self._scheduler.schedule(self)
 
   def __getattr__(self, name):
     if name == "path":
       return self._path.geturl()
-    elif name == "state":
-      return self._state
     elif name == "urn":
       return self._urn
 
-  def run(self):
-    while True:
-      if len(self._mailbox) == 0:
-        self._state = ActorRef.Idle
-        break
-      else:
-        self._state = ActorRef.Running
-        # Take a message from the head of the queue.
-        message = self._mailbox.pop(0)
-        # If we get a poison pill we must die.
-        if isinstance(message, PoisonPill):
-          self._scheduler.unschedule(self)
-          self._state = ActorRef.Completed
-          # If the actor defined a stop method now is a good
-          # time to call it.
-          if hasattr(self._actor, "stop"):
-            if callable(self._actor.stop):
-              self._actor.stop()
-          break
-        # Process an incoming message.
-        try:
-          self._actor.receive(message)
-        except Exception as exception:
-          self._logger.exception(exception)
-        # Try to return control of the processor to the scheduler if
-        # the scheduler fires an InterruptException we hand over control
-        # and if it doesn't we keep processing messages.
-        try:
-          self._scheduler.interrupt(self)
-        except InterruptException:
-          if len(self._mailbox) > 0:
-            self._state = ActorRef.Ready
-          else:
-            self._state = ActorRef.Idle
-          break
-
   def tell(self, message):
     self._mailbox.append(message)
-    if self._state == ActorRef.Idle:
-      self._state = ActorRef.Ready
