@@ -19,24 +19,57 @@
 # Thomas Quintana <quintana.thomas@gmail.com>
 
 import logging
+import time
 
 from sortedcontainers import SortedDict
 
 from jobber.actors.exceptions import InterruptException
+from jobber.constants import ACTOR_PROCESSOR_COMPLETED, ACTOR_PROCESSOR_IDLE, \
+                             ACTOR_PROCESSOR_READY, ACTOR_PROCESSOR_RUNNING
 from jobber.utils import object_fqn
 
 class ActorScheduler(object):
-  def __init__(self, *args **kwargs):
-    super(Scheduler, self).__init__()
+  def __init__(self, **kwargs):
+    super(ActorScheduler, self).__init__()
     self._logger = logging.getLogger(object_fqn(self))
-    self._idle_tasks = SortedDict()
-    self._ready_tasks = SortedDict()
+    # Scheduler state.
+    self._max_msgs_per_slice = kwargs.get("max_msgs_per_slice", 10)
+    self._max_time_per_slice = kwargs.get("max_time_per_slice", 50) # In ms.
+    self._running = True
+    # Current actor state.
+    self._current_actor_proc = None
+    self._current_actor_msgs = 0
+    self._current_actor_start = 0.
+    # Actor processors.
+    self._deleted_actor_procs = SortedDict()
+    self._idle_actor_procs = SortedDict()
+    self._ready_actor_procs = SortedDict()
+    # Run-time statistics.
+    self._start_run_time = 0.
+    self._total_msgs_processed = 0
+
+  def __getattr__(self, name):
+    if name == "total_msgs_processed":
+      return self._total_msgs_processed
+
+  def _run(self):
+    pass
 
   def interrupt(self):
     pass
 
-  def schedule(self, task):
-    pass
+  def schedule(self, actor_proc):
+    if actor_proc.state == ACTOR_PROCESSOR_IDLE:
+      pass # Insert into idle queue.
+    elif actor_proc.state == ACTOR_PROCESSOR_READY:
+      pass # Insert into ready queue.
 
-  def unschedule(self, task):
-    pass
+  def shutdown(self):
+    self._running = False
+
+  def start(self):
+    self._start_run_time = time.clock()
+    self._run()
+
+  def unschedule(self, actor_proc):
+    pass # Insert into the deleted queue.

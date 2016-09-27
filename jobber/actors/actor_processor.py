@@ -30,7 +30,7 @@ class ActorProcessor(object):
   A task is a lightweight thread of execution.
   '''
 
-  def __init__(self, actor, mailbox, scheduler, uuid, priority=10):
+  def __init__(self, actor, mailbox, scheduler, uuid, priority=1):
     super(ActorProcessor, self).__init__()
     self._logger = logging.getLogger(object_fqn(self))
     self._actor = actor
