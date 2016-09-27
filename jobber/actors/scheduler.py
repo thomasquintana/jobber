@@ -17,6 +17,18 @@
 #
 # Thomas Quintana <quintana.thomas@gmail.com>
 
+import logging
+
+from sortedcontainers import SortedDict
+
+from jobber.actors.exceptions import InterruptException
+from jobber.utils import object_fqn
+
 class Scheduler(object):
   def __init__(self):
     super(Scheduler, self).__init__()
+    self._logger = logging.getLogger(object_fqn(self))
+    self._tasks = SortedDict()
+
+  def interrupt(self, task):
+    raise InterruptException()

@@ -27,12 +27,6 @@ class Task(object):
   A task is a lightweight thread of execution.
   '''
 
-  # Possible Task States.
-  Completed = "Completed"
-  Idle = "Idle"
-  Ready = "Ready"
-  Running = "Running"
-
   def __init__(self, name=None, priority=10):
     super(Task, self).__init__()
     self._name = name or self.__class__.__name__
@@ -41,12 +35,7 @@ class Task(object):
     self._total_proc_time = 0.
 
   def __getattr__(self, name):
-    if name == "fqn":
-      return "%s.%s" % (
-        self.__class__.__module__,
-        self.__class__.__name__
-      )
-    elif name == "name":
+    if name == "name":
       return self._name
     elif name == "priority":
       return self._priority

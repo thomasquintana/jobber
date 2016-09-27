@@ -24,6 +24,7 @@ from uuid import uuid4
 from jobber.actors.exceptions import InterruptException
 from jobber.actors.executable import Task
 from jobber.actors.messages.poison_pill import PoisonPill
+from jobber.utils import object_fqn
 
 class ActorRef(Task):
   '''
@@ -34,14 +35,19 @@ class ActorRef(Task):
   scheduler -- The scheduler responsible for the exection of this actor.
   '''
 
+  Completed = "Completed"
+  Idle = "Idle"
+  Ready = "Ready"
+  Running = "Running"
+
   def __init__(self, actor, path, scheduler):
     super(ActorRef, self).__init__()
-    self._logger = logging.getLogger(self.fqn)
+    self._logger = logging.getLogger(object_fqn(self))
     self._actor = actor
     self._mailbox = list()
     self._path = path
     self._scheduler = scheduler
-    self._state = Task.Idle
+    self._state = ActorRef.Idle
     self._urn = uuid4()
     # NOTE: This is typically bad and should make your linter complain.
     # Monkey patch the actor.
@@ -60,16 +66,16 @@ class ActorRef(Task):
   def run(self):
     while True:
       if len(self._mailbox) == 0:
-        self._state = Task.Idle
+        self._state = ActorRef.Idle
         break
       else:
-        self._state = Task.Running
+        self._state = ActorRef.Running
         # Take a message from the head of the queue.
         message = self._mailbox.pop(0)
         # If we get a poison pill we must die.
         if isinstance(message, PoisonPill):
           self._scheduler.unschedule(self)
-          self._state = Task.Completed
+          self._state = ActorRef.Completed
           # If the actor defined a stop method now is a good
           # time to call it.
           if hasattr(self._actor, "stop"):
@@ -85,15 +91,15 @@ class ActorRef(Task):
         # the scheduler fires an InterruptException we hand over control
         # and if it doesn't we keep processing messages.
         try:
-          self._scheduler.interrupt()
+          self._scheduler.interrupt(self)
         except InterruptException:
           if len(self._mailbox) > 0:
-            self._state = Task.Ready
+            self._state = ActorRef.Ready
           else:
-            self._state = Task.Idle
+            self._state = ActorRef.Idle
           break
 
   def tell(self, message):
     self._mailbox.append(message)
-    if self._state == Task.Idle:
-      self._state = Task.Ready
+    if self._state == ActorRef.Idle:
+      self._state = ActorRef.Ready
