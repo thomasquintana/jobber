@@ -31,10 +31,12 @@ class ActorProcessor(object):
   A task is a lightweight thread of execution.
   '''
 
-  def __init__(self, actor, mailbox, scheduler, urn):
+  def __init__(self, actor, mailbox, scheduler, urn, priority=1):
     super(ActorProcessor, self).__init__()
     self._logger = logging.getLogger(object_fqn(self))
     self._actor = actor
+    self._adj_priority = priority
+    self._default_priority = priority
     self._mailbox = mailbox
     self._scheduler = scheduler
     self._state = None
@@ -46,12 +48,16 @@ class ActorProcessor(object):
     self._total_run_time = 0
 
   def __getattr__(self, name):
-    if name == "last_msg_count":
+    if name == "adjusted_priority":
+      return self._adj_priority
+    elif name == "last_msg_count":
       return self._last_msg_count
     elif name == "last_run_time":
       return self._last_run_time
     elif name == "pending_msg_count":
       return len(self._mailbox)
+    elif name == "priority":
+      return self._default_priority
     elif name == "state":
       return self._state
     elif name == "total_msg_count":
@@ -60,6 +66,12 @@ class ActorProcessor(object):
       return self._total_run_time
     elif name == "urn":
       return self._urn
+
+  def __setattr__(self, name, value):
+    if name == "adjusted_priority":
+      self._adj_priority = value
+    elif name == "priority":
+      self._default_priority = value
 
   def execute(self):
     '''
