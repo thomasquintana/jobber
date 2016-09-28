@@ -23,8 +23,7 @@ import random
 import time
 
 from jobber.actors.exceptions import InterruptException
-from jobber.constants import ACTOR_PROCESSOR_COMPLETED, ACTOR_PROCESSOR_IDLE, \
-                             ACTOR_PROCESSOR_READY, ACTOR_PROCESSOR_RUNNING
+from jobber.constants import ACTOR_PROCESSOR_IDLE, ACTOR_PROCESSOR_READY
 from jobber.utils import format_time_period, object_fqn
 
 class ActorScheduler(object):
