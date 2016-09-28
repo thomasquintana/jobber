@@ -23,7 +23,15 @@ JOBBER_SCHEME       = "jobber"
 JOBBER_CTX_HOSTNAME = "jobber_hostname"
 JOBBER_CTX_PORT     = "jobber_port"
 
+# Actor processor states.
 ACTOR_PROCESSOR_COMPLETED = "Completed"
 ACTOR_PROCESSOR_IDLE      = "Idle"
 ACTOR_PROCESSOR_READY     = "Ready"
 ACTOR_PROCESSOR_RUNNING   = "Running"
+
+# Time periods expresses in microseconds.
+MU_SECOND         = int(1e6)
+MINUTE_MU_SECONDS = int(60 * MU_SECOND)
+HOUR_MU_SECONDS   = int(60 * MINUTE_MU_SECONDS)
+DAY_MU_SECONDS    = int(24 * HOUR_MU_SECONDS)
+WEEK_MU_SECONDS   = int(7  * DAY_MU_SECONDS)

@@ -19,6 +19,7 @@
 # Thomas Quintana <quintana.thomas@gmail.com>
 
 import logging
+import math
 import time
 
 from sortedcontainers import SortedDict
@@ -26,7 +27,7 @@ from sortedcontainers import SortedDict
 from jobber.actors.exceptions import InterruptException
 from jobber.constants import ACTOR_PROCESSOR_COMPLETED, ACTOR_PROCESSOR_IDLE, \
                              ACTOR_PROCESSOR_READY, ACTOR_PROCESSOR_RUNNING
-from jobber.utils import object_fqn
+from jobber.utils import format_time_period, object_fqn
 
 class ActorScheduler(object):
   def __init__(self, **kwargs):
@@ -51,12 +52,19 @@ class ActorScheduler(object):
   def __getattr__(self, name):
     if name == "total_msgs_processed":
       return self._total_msgs_processed
+    elif name == "total_run_time":
+      return (time.time() - self._start_run_time) / 1e-6
+    elif name == "total_run_time_str":
+      return format_time_period((time.time() - self._start_run_time) / 1e-6)
 
   def _run(self):
     pass
 
   def interrupt(self):
-    pass
+    self._current_actor_msgs += 1
+    if self._current_actor_msgs == self._max_msgs_per_slice:
+      raise InterruptException()
+    # TODO: Interrupt based on time constraints.
 
   def schedule(self, actor_proc):
     if actor_proc.state == ACTOR_PROCESSOR_IDLE:
@@ -68,7 +76,7 @@ class ActorScheduler(object):
     self._running = False
 
   def start(self):
-    self._start_run_time = time.clock()
+    self._start_run_time = time.time()
     self._run()
 
   def unschedule(self, actor_proc):
