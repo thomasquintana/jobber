@@ -19,6 +19,7 @@
 # Thomas Quintana <quintana.thomas@gmail.com>
 
 import logging
+import random
 import time
 
 from jobber.actors.exceptions import InterruptException
@@ -54,26 +55,35 @@ class ActorScheduler(object):
 
   def _run(self):
     while self._running:
-      # Allow actors in the current ready queue to take over the process.
+      # Check the idle actor processors list for actors with new messages.
+      if len(self._idle_actor_procs) > 0:
+        temp = list()
+        for actor_proc in self._idle_actor_procs:
+          if actor_proc.pending_msg_count == 0:
+            temp.append(actor_proc)
+          else:
+            self._next_ready_actor_procs.append(actor_proc)
+        self._idle_actor_procs = temp
+      # Update the current ready queue.
+      self._curr_ready_actor_procs = self._next_ready_actor_procs
+      self._next_ready_actor_procs = list()
+      # If we don't have work to do back off for random periods of time
+      # that never exceed one second at a time.
+      if len(self._curr_ready_actor_procs) == 0:
+        time.sleep(1 * random.uniform(0, 1))
+        continue
+      # Once we have some work to do allow actor processors in the current
+      # ready queue to take over the process.
       while len(self._curr_ready_actor_procs) > 0:
         self._current_actor_proc = self._curr_ready_actor_procs.pop(0)
+        # Hand over the process to the current actor processor.
         self._current_actor_proc.execute()
+        # Move the actor processor to the next ready queue or the idle
+        # queue if it doesn't have anymore messages to process.
         if self._current_actor_proc.state == ACTOR_PROCESSOR_IDLE:
           self._idle_actor_procs.append(self._current_actor_proc)
         elif self._current_actor_proc.state == ACTOR_PROCESSOR_READY:
           self._next_ready_actor_procs.append(self._current_actor_proc)
-      # Check the idle actors list for actors with new messages.
-      temp = list()
-      for actor_proc in self._idle_actor_procs:
-        if actor_proc.pending_msg_count == 0:
-          temp.append(actor_proc)
-        else:
-          self._next_ready_actor_procs.append(actor_proc)
-      self._idle_actor_procs = temp
-      # Update the current ready queue.
-      self._curr_ready_actor_procs = self._next_ready_actor_procs
-      self._next_ready_actor_procs = list()
-
 
   def interrupt(self):
     # interrupt() is called after every message handled so we
