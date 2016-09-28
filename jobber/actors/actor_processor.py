@@ -18,6 +18,7 @@
 # Thomas Quintana <quintana.thomas@gmail.com>
 
 import logging
+import time
 
 from jobber.actors.exceptions import InterruptException
 from jobber.actors.messages.poison_pill import PoisonPill
@@ -30,21 +31,31 @@ class ActorProcessor(object):
   A task is a lightweight thread of execution.
   '''
 
-  def __init__(self, actor, mailbox, scheduler, uuid, priority=1):
+  def __init__(self, actor, mailbox, scheduler, urn):
     super(ActorProcessor, self).__init__()
     self._logger = logging.getLogger(object_fqn(self))
     self._actor = actor
     self._mailbox = mailbox
-    self._priority = priority
     self._scheduler = scheduler
     self._state = None
-    self._urn = uuid
+    self._urn = urn
+    # Run-time statistics.
+    self._last_msg_count = 0
+    self._last_run_time = 0
+    self._total_msg_count = 0
+    self._total_run_time = 0
 
   def __getattr__(self, name):
-    if name == "priority":
-      return self._priority
+    if name == "last_msg_count":
+      return self._last_msg_count
+    elif name == "last_run_time":
+      return self._last_run_time
     elif name == "state":
       return self._state
+    elif name == "total_msg_count":
+      return self._total_msg_count
+    elif name == "total_run_time":
+      return self._total_run_time
     elif name == "urn":
       return self._urn
 
@@ -53,6 +64,7 @@ class ActorProcessor(object):
     This method will be scheduled for execution by the scheduler..
     '''
 
+    self._last_msg_count = 0
     while True:
       if len(self._mailbox) == 0:
         self._state = ACTOR_PROCESSOR_IDLE
@@ -66,10 +78,18 @@ class ActorProcessor(object):
           self.stop()
           break
         # Process an incoming message.
+        start_time = time.time()
         try:
           self._actor.receive(message)
         except Exception as exception:
           self._logger.exception(exception)
+        end_time = time.time()
+        # Update the run-time statistics before we call the scheduler's
+        # interrupt() method.
+        self._last_msg_count += 1
+        self._last_run_time = int((end_time - start_time) / 1e-3)
+        self._total_run_time += self._last_run_time
+        self._total_msg_count += 1
         # Try to return control of the processor to the scheduler if
         # the scheduler fires an InterruptException we hand over control
         # and if it doesn't we keep processing messages.

@@ -19,7 +19,6 @@
 # Thomas Quintana <quintana.thomas@gmail.com>
 
 import logging
-import math
 import time
 
 from sortedcontainers import SortedDict
@@ -37,14 +36,13 @@ class ActorScheduler(object):
     self._max_msgs_per_slice = kwargs.get("max_msgs_per_slice", 10)
     self._max_time_per_slice = kwargs.get("max_time_per_slice", 50) # In ms.
     self._running = True
-    # Current actor state.
+    # Current actor with control of the process.
     self._current_actor_proc = None
-    self._current_actor_msgs = 0
-    self._current_actor_start = 0.
     # Actor processors.
-    self._deleted_actor_procs = SortedDict()
-    self._idle_actor_procs = SortedDict()
-    self._ready_actor_procs = SortedDict()
+    self._deleted_actor_procs = SortedDict(key=lambda ap: ap.urn)
+    self._idle_actor_procs = list()
+    self._curr_ready_actor_procs = SortedDict(key=lambda ap: ap.total_run_time)
+    self._next_ready_actor_procs = SortedDict(key=lambda ap: ap.total_run_time)
     # Run-time statistics.
     self._start_run_time = 0.
     self._total_msgs_processed = 0
@@ -64,14 +62,12 @@ class ActorScheduler(object):
   def interrupt(self):
     # interrupt() is called after every message handled so we
     # keep track of the number of messages handled here.
-    self._current_actor_msgs += 1
     self._total_msgs_processed += 1
     # Make sure the actor hasn't used up more time than it was allowed.
-    run_time_ms = int((time.time() - self._current_actor_start) / 1e-3)
-    if run_time_ms >= self._max_time_per_slice:
+    if self._current_actor_proc.last_run_time >= self._max_time_per_slice:
       raise InterruptException()
     # Make sure the actor hasn't gone over the message processing threshold.
-    elif self._current_actor_msgs == self._max_msgs_per_slice:
+    elif self._current_actor_proc.last_msg_count == self._max_msgs_per_slice:
       raise InterruptException()
 
   def schedule(self, actor_proc):
