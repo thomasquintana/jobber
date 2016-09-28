@@ -58,13 +58,21 @@ class ActorScheduler(object):
       return format_time_period((time.time() - self._start_run_time) / 1e-6)
 
   def _run(self):
-    pass
+    while self._running:
+      pass
 
   def interrupt(self):
+    # interrupt() is called after every message handled so we
+    # keep track of the number of messages handled here.
     self._current_actor_msgs += 1
-    if self._current_actor_msgs == self._max_msgs_per_slice:
+    self._total_msgs_processed += 1
+    # Make sure the actor hasn't used up more time than it was allowed.
+    run_time_ms = (time.time() - self._current_actor_start) / 1e-3
+    if run_time_ms >= self._max_time_per_slice:
       raise InterruptException()
-    # TODO: Interrupt based on time constraints.
+    # Make sure the actor hasn't gone over the message processing threshold.
+    elif self._current_actor_msgs == self._max_msgs_per_slice:
+      raise InterruptException()
 
   def schedule(self, actor_proc):
     if actor_proc.state == ACTOR_PROCESSOR_IDLE:
