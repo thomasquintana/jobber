@@ -74,7 +74,9 @@ class ActorScheduler(object):
       # ready queue to take over the process.
       while len(self._ready_actor_procs) > 0:
         self._curr_actor_proc = self._ready_actor_procs.pop(0)
-        # Hand over the process to the current actor processor.
+        # If the current actor was penalized on a previous run it will be
+        # skipped until the slice penalty is adjusted to 0. If there is no
+        # penalty the actor is handed the CPU
         if self._curr_actor_proc.slice_penalty > 0:
           self._curr_actor_proc.slice_penalty -= 1
           self._waiting_actor_procs.append(self._curr_actor_proc)
