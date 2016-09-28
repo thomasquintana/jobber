@@ -67,7 +67,7 @@ class ActorScheduler(object):
     self._current_actor_msgs += 1
     self._total_msgs_processed += 1
     # Make sure the actor hasn't used up more time than it was allowed.
-    run_time_ms = (time.time() - self._current_actor_start) / 1e-3
+    run_time_ms = int((time.time() - self._current_actor_start) / 1e-3)
     if run_time_ms >= self._max_time_per_slice:
       raise InterruptException()
     # Make sure the actor hasn't gone over the message processing threshold.
