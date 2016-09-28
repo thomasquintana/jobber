@@ -96,13 +96,11 @@ class ActorScheduler(object):
             self._waiting_actor_procs.append(self._curr_actor_proc)
 
   def interrupt(self):
-    slice_msg_count = self._curr_actor_proc.slice_msg_count
-    slice_run_time = self._curr_actor_proc.slice_run_time
     # Constrain the actor to the max time slice.
-    if slice_run_time >= self._max_time_slice:
+    if self._curr_actor_proc.slice_run_time >= self._max_time_slice:
       raise InterruptException()
     # Constrain the actor to the max number of messages per time slice.
-    elif slice_msg_count == self._max_msgs_slice:
+    elif self._curr_actor_proc.slice_msg_count == self._max_msgs_slice:
       raise InterruptException()
 
   def schedule(self, actor_proc):
