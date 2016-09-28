@@ -42,18 +42,18 @@ class ActorProcessor(object):
     self._state = None
     self._urn = urn
     # Run-time statistics.
-    self._last_msg_count = 0
-    self._last_run_time = 0
+    self._slice_msg_count = 0
+    self._slice_run_time = 0
     self._total_msg_count = 0
     self._total_run_time = 0
 
   def __getattr__(self, name):
     if name == "adjusted_priority":
       return self._adj_priority
-    elif name == "last_msg_count":
-      return self._last_msg_count
-    elif name == "last_run_time":
-      return self._last_run_time
+    elif name == "slice_msg_count":
+      return self._slice_msg_count
+    elif name == "slice_run_time":
+      return self._slice_run_time
     elif name == "pending_msg_count":
       return len(self._mailbox)
     elif name == "priority":
@@ -78,7 +78,8 @@ class ActorProcessor(object):
     This method will be scheduled for execution by the scheduler..
     '''
 
-    self._last_msg_count = 0
+    self._slice_msg_count = 0
+    self._slice_run_time = 0
     while True:
       if len(self._mailbox) == 0:
         self._state = ACTOR_PROCESSOR_IDLE
@@ -98,12 +99,10 @@ class ActorProcessor(object):
         except Exception as exception:
           self._logger.exception(exception)
         end_time = time.time()
-        # Update the run-time statistics before we call the scheduler's
+        # Update the slice statistics before we call the scheduler's
         # interrupt() method.
-        self._last_msg_count += 1
-        self._last_run_time = int((end_time - start_time) / 1e-3)
-        self._total_run_time += self._last_run_time
-        self._total_msg_count += 1
+        self._slice_msg_count += 1
+        self._slice_run_time += int((end_time - start_time) / 1e-3)
         # Try to return control of the processor to the scheduler if
         # the scheduler fires an InterruptException we hand over control
         # and if it doesn't we keep processing messages.
@@ -115,6 +114,8 @@ class ActorProcessor(object):
           else:
             self._state = ACTOR_PROCESSOR_IDLE
           break
+    self._total_msg_count += self._slice_msg_count
+    self._total_run_time += self._slice_run_time
 
   def start(self):
     # If the actor defined an on_start method now is a good
