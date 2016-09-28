@@ -31,18 +31,17 @@ class ActorProcessor(object):
   A task is a lightweight thread of execution.
   '''
 
-  def __init__(self, actor, mailbox, scheduler, urn, priority=1):
+  def __init__(self, actor, mailbox, scheduler, urn):
     super(ActorProcessor, self).__init__()
     self._logger = logging.getLogger(object_fqn(self))
     self._actor = actor
-    self._priority = priority
     self._mailbox = mailbox
     self._scheduler = scheduler
     self._state = None
     self._urn = urn
     # Run-time statistics.
-    self._adj_priority = priority
     self._slice_msg_count = 0
+    self._slice_penalty = 0
     self._slice_run_time = 0
     self._total_msg_count = 0
     self._total_run_time = 0
@@ -50,14 +49,14 @@ class ActorProcessor(object):
   def __getattr__(self, name):
     if name == "adjusted_priority":
       return self._adj_priority
-    elif name == "slice_msg_count":
-      return self._slice_msg_count
-    elif name == "slice_run_time":
-      return self._slice_run_time
     elif name == "pending_msg_count":
       return len(self._mailbox)
-    elif name == "priority":
-      return self._priority
+    elif name == "slice_msg_count":
+      return self._slice_msg_count
+    elif name == "slice_penalty":
+      return self._slice_penalty
+    elif name == "slice_run_time":
+      return self._slice_run_time
     elif name == "state":
       return self._state
     elif name == "total_msg_count":
@@ -68,8 +67,8 @@ class ActorProcessor(object):
       return self._urn
 
   def __setattr__(self, name, value):
-    if name == "adjusted_priority":
-      self._adj_priority = value
+    if name == "slice_penalty":
+      self._slice_penalty = value
 
   def execute(self):
     '''

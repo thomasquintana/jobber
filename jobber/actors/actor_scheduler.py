@@ -27,21 +27,20 @@ from jobber.constants import ACTOR_PROCESSOR_IDLE, ACTOR_PROCESSOR_READY
 from jobber.utils import format_time_period, object_fqn
 
 class ActorScheduler(object):
-  def __init__(self, **kwargs):
+  def __init__(self, max_msgs_slice=10, max_time_slice=50):
     super(ActorScheduler, self).__init__()
     self._logger = logging.getLogger(object_fqn(self))
-    # Scheduler state.
-    self._max_msgs_per_slice = kwargs.get("max_msgs_per_slice", 10)
-    self._max_time_per_slice = kwargs.get("max_time_per_slice", 50) # In ms.
-    self._running = True
-    # Current actor with control of the process.
-    self._current_actor_proc = None
-    # Actor processors.
+    self._max_msgs_slice = max_msgs_slice
+    self._max_time_slice = max_time_slice # In milliseconds.
+    # Scheduler run-time state.
+    self._curr_actor_proc = None
     self._idle_actor_procs = list()
-    self._curr_ready_actor_procs = list()
-    self._next_ready_actor_procs = list()
+    self._ready_actor_procs = list()
+    self._waiting_actor_procs = list()
+    self._running = False
     # Run-time statistics.
     self._start_run_time = 0.
+    self._stop_run_time = 0.
     self._total_msgs_processed = 0
 
   def __getattr__(self, name):
@@ -61,38 +60,49 @@ class ActorScheduler(object):
           if actor_proc.pending_msg_count == 0:
             temp.append(actor_proc)
           else:
-            self._next_ready_actor_procs.append(actor_proc)
+            self._waiting_actor_procs.append(actor_proc)
         self._idle_actor_procs = temp
       # Update the current ready queue.
-      self._curr_ready_actor_procs = self._next_ready_actor_procs
-      self._next_ready_actor_procs = list()
+      self._ready_actor_procs = self._waiting_actor_procs
+      self._waiting_actor_procs = list()
       # If we don't have work to do back off for random periods of time
       # that never exceed one second at a time.
-      if len(self._curr_ready_actor_procs) == 0:
+      if len(self._ready_actor_procs) == 0:
         time.sleep(1 * random.uniform(0, 1))
         continue
       # Once we have some work to do allow actor processors in the current
       # ready queue to take over the process.
-      while len(self._curr_ready_actor_procs) > 0:
-        self._current_actor_proc = self._curr_ready_actor_procs.pop(0)
+      while len(self._ready_actor_procs) > 0:
+        self._curr_actor_proc = self._ready_actor_procs.pop(0)
         # Hand over the process to the current actor processor.
-        self._current_actor_proc.execute()
-        # Move the actor processor to the next ready queue or the idle
-        # queue if it doesn't have anymore messages to process.
-        if self._current_actor_proc.state == ACTOR_PROCESSOR_IDLE:
-          self._idle_actor_procs.append(self._current_actor_proc)
-        elif self._current_actor_proc.state == ACTOR_PROCESSOR_READY:
-          self._next_ready_actor_procs.append(self._current_actor_proc)
+        if self._curr_actor_proc.slice_penalty > 0:
+          self._curr_actor_proc.slice_penalty -= 1
+          self._waiting_actor_procs.append(self._curr_actor_proc)
+        else:
+          self._curr_actor_proc.execute()
+          # Update our run-time statistics.
+          self._total_msgs_processed += self._curr_actor_proc.slice_msg_count
+          # Make sure we penalize CPU hogs.
+          delta = self._max_time_slice - self._curr_actor_proc.slice_run_time
+          if delta < 0 and abs(delta) > self._max_time_slice * .1:
+            self._curr_actor_proc.slice_penalty = int(
+              self._curr_actor_proc.slice_run_time / self._max_time_slice
+            )
+          # Move the actor processor to the next ready queue or the idle
+          # queue if it doesn't have anymore messages to process.
+          if self._curr_actor_proc.state == ACTOR_PROCESSOR_IDLE:
+            self._idle_actor_procs.append(self._curr_actor_proc)
+          elif self._curr_actor_proc.state == ACTOR_PROCESSOR_READY:
+            self._waiting_actor_procs.append(self._curr_actor_proc)
 
   def interrupt(self):
-    # interrupt() is called after every message handled so we
-    # keep track of the number of messages handled here.
-    self._total_msgs_processed += 1
-    # Make sure the actor hasn't used up more time than it was allowed.
-    if self._current_actor_proc.last_run_time >= self._max_time_per_slice:
+    slice_msg_count = self._curr_actor_proc.slice_msg_count
+    slice_run_time = self._curr_actor_proc.slice_run_time
+    # Constrain the actor to the max time slice.
+    if slice_run_time >= self._max_time_slice:
       raise InterruptException()
-    # Make sure the actor hasn't gone over the message processing threshold.
-    elif self._current_actor_proc.last_msg_count == self._max_msgs_per_slice:
+    # Constrain the actor to the max number of messages per time slice.
+    elif slice_msg_count == self._max_msgs_slice:
       raise InterruptException()
 
   def schedule(self, actor_proc):
@@ -100,7 +110,9 @@ class ActorScheduler(object):
 
   def shutdown(self):
     self._running = False
+    self._stop_run_time = time.time()
 
   def start(self):
+    self._running = True
     self._start_run_time = time.time()
     self._run()
