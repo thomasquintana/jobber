@@ -21,8 +21,6 @@
 import logging
 import time
 
-from sortedcontainers import SortedDict
-
 from jobber.actors.exceptions import InterruptException
 from jobber.constants import ACTOR_PROCESSOR_COMPLETED, ACTOR_PROCESSOR_IDLE, \
                              ACTOR_PROCESSOR_READY, ACTOR_PROCESSOR_RUNNING
@@ -39,10 +37,9 @@ class ActorScheduler(object):
     # Current actor with control of the process.
     self._current_actor_proc = None
     # Actor processors.
-    self._deleted_actor_procs = SortedDict(key=lambda ap: ap.urn)
     self._idle_actor_procs = list()
-    self._curr_ready_actor_procs = SortedDict(key=lambda ap: ap.total_run_time)
-    self._next_ready_actor_procs = SortedDict(key=lambda ap: ap.total_run_time)
+    self._curr_ready_actor_procs = list()
+    self._next_ready_actor_procs = list()
     # Run-time statistics.
     self._start_run_time = 0.
     self._total_msgs_processed = 0
@@ -57,7 +54,26 @@ class ActorScheduler(object):
 
   def _run(self):
     while self._running:
-      pass
+      # Allow actors in the current ready queue to take over the process.
+      while len(self._curr_ready_actor_procs) > 0:
+        self._current_actor_proc = self._curr_ready_actor_procs.pop(0)
+        self._current_actor_proc.execute()
+        if self._current_actor_proc.state == ACTOR_PROCESSOR_IDLE:
+          self._idle_actor_procs.append(self._current_actor_proc)
+        elif self._current_actor_proc.state == ACTOR_PROCESSOR_READY:
+          self._next_ready_actor_procs.append(self._current_actor_proc)
+      # Check the idle actors list for actors with new messages.
+      temp = list()
+      for actor_proc in self._idle_actor_procs:
+        if actor_proc.pending_msg_count == 0:
+          temp.append(actor_proc)
+        else:
+          self._next_ready_actor_procs.append(actor_proc)
+      self._idle_actor_procs = temp
+      # Update the current ready queue.
+      self._curr_ready_actor_procs = self._next_ready_actor_procs
+      self._next_ready_actor_procs = list()
+
 
   def interrupt(self):
     # interrupt() is called after every message handled so we
@@ -71,10 +87,7 @@ class ActorScheduler(object):
       raise InterruptException()
 
   def schedule(self, actor_proc):
-    if actor_proc.state == ACTOR_PROCESSOR_IDLE:
-      pass # Insert into idle queue.
-    elif actor_proc.state == ACTOR_PROCESSOR_READY:
-      pass # Insert into ready queue.
+    self._idle_actor_procs.append(actor_proc)
 
   def shutdown(self):
     self._running = False
@@ -82,6 +95,3 @@ class ActorScheduler(object):
   def start(self):
     self._start_run_time = time.time()
     self._run()
-
-  def unschedule(self, actor_proc):
-    pass # Insert into the deleted queue.

@@ -50,6 +50,8 @@ class ActorProcessor(object):
       return self._last_msg_count
     elif name == "last_run_time":
       return self._last_run_time
+    elif name == "pending_msg_count":
+      return len(self._mailbox)
     elif name == "state":
       return self._state
     elif name == "total_msg_count":
@@ -113,7 +115,6 @@ class ActorProcessor(object):
 
   def stop(self):
     self._state = ACTOR_PROCESSOR_COMPLETED
-    self._scheduler.unschedule(self)
     # If the actor defined an on_stop method now is a good
     # time to call it.
     if hasattr(self._actor, "on_stop"):
