@@ -35,13 +35,13 @@ class ActorProcessor(object):
     super(ActorProcessor, self).__init__()
     self._logger = logging.getLogger(object_fqn(self))
     self._actor = actor
-    self._adj_priority = priority
-    self._default_priority = priority
+    self._priority = priority
     self._mailbox = mailbox
     self._scheduler = scheduler
     self._state = None
     self._urn = urn
     # Run-time statistics.
+    self._adj_priority = priority
     self._slice_msg_count = 0
     self._slice_run_time = 0
     self._total_msg_count = 0
@@ -57,7 +57,7 @@ class ActorProcessor(object):
     elif name == "pending_msg_count":
       return len(self._mailbox)
     elif name == "priority":
-      return self._default_priority
+      return self._priority
     elif name == "state":
       return self._state
     elif name == "total_msg_count":
@@ -70,8 +70,6 @@ class ActorProcessor(object):
   def __setattr__(self, name, value):
     if name == "adjusted_priority":
       self._adj_priority = value
-    elif name == "priority":
-      self._default_priority = value
 
   def execute(self):
     '''
