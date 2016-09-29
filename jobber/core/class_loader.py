@@ -27,7 +27,7 @@ def safe_import(fqn, force_load=False):
   fqn -- the class fully qualified name.
 
   Keyword arguments:
-  force_load -- a flag indicating if a module should be reloaded from disk.
+  force_load -- a flag indicating if the module should be reloaded from disk.
   '''
 
   cache = dict()
