@@ -28,7 +28,10 @@ from jobber.utils import object_fqn, time_delta_ms
 
 class ActorProcessor(object):
   '''
-  A task is a lightweight thread of execution.
+  An actor processor is responsible for mapping individual actors to
+  processes that can run the actor. The actor processor works in conjunction
+  with the scheduler to provide fair resource distribution between all
+  the actors managed by a particular scheduler.
   '''
 
   def __init__(self, actor, mailbox, scheduler, urn):

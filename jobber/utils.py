@@ -63,13 +63,13 @@ def object_fqn(o):
 
   return "%s.%s" % (o.__class__.__module__, o.__class__.__name__)
 
-def time_delta_ms(start, end):
+def time_delta_ms(start_time, end_time):
   '''
   Returns a time delta between a start time and end time in milliseconds.
   
   Positional arguments:
-  start -- the start time.
-  end   -- the end time.
+  start_time -- the start time.
+  end_time   -- the end time.
   '''
 
-  return int((end - start) * 1e3)
+  return int((end_time - start_time) * 1e3)

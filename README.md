@@ -1,2 +1,2 @@
 # jobber
-Jobber is a middleware server used for deploying interactive services using the actor model.
+Jobber is a multi-core, distributed, actor framework for Python.

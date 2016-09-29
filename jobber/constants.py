@@ -29,7 +29,7 @@ ACTOR_PROCESSOR_IDLE      = "Idle"
 ACTOR_PROCESSOR_READY     = "Ready"
 ACTOR_PROCESSOR_RUNNING   = "Running"
 
-# Time periods expresses in microseconds.
+# Time periods expressed in milliseconds.
 MS_SECOND = int(1e3)
 MS_MINUTE = int(60 * MS_SECOND)
 MS_HOUR   = int(60 * MS_MINUTE)
