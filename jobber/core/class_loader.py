@@ -38,7 +38,7 @@ def safe_import(fqn, force_load=False):
       if fqn not in sys.builtin_module_names:
         # Remove any submodules because they won't appear in the newly loaded
         # module's namespace if they're already in sys.modules.
-        sub_modules = [m for m in sys.modules if m.startswith(fqn + '.')]
+        sub_modules = [m for m in sys.modules if m.startswith("%s." % fqn)]
         for key in [fqn] + sub_modules:
           # Prevent garbage collection.
           cache[key] = sys.modules[key]
