@@ -24,7 +24,7 @@ from jobber.actors.exceptions import InterruptException
 from jobber.actors.messages.poison_pill import PoisonPill
 from jobber.constants import ACTOR_PROCESSOR_COMPLETED, ACTOR_PROCESSOR_IDLE, \
                              ACTOR_PROCESSOR_READY, ACTOR_PROCESSOR_RUNNING
-from jobber.utils import object_fqn
+from jobber.utils import object_fqn, time_delta_ms
 
 class ActorProcessor(object):
   '''
@@ -99,7 +99,7 @@ class ActorProcessor(object):
         # Update the slice statistics before we call the scheduler's
         # interrupt() method.
         self._slice_msg_count += 1
-        self._slice_run_time += int((end_time - start_time) / 1e-3)
+        self._slice_run_time += time_delta_ms(start_time, end_time)
         # Try to return control of the processor to the scheduler if
         # the scheduler fires an InterruptException we hand over control
         # and if it doesn't we keep processing messages.

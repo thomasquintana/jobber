@@ -24,7 +24,7 @@ import time
 
 from jobber.actors.exceptions import InterruptException
 from jobber.constants import ACTOR_PROCESSOR_IDLE, ACTOR_PROCESSOR_READY
-from jobber.utils import format_time_period, object_fqn
+from jobber.utils import format_ms, object_fqn, time_delta_ms
 
 class ActorScheduler(object):
   def __init__(self, max_msgs_slice=10, max_time_slice=50):
@@ -47,9 +47,9 @@ class ActorScheduler(object):
     if name == "total_msgs_processed":
       return self._total_msgs_processed
     elif name == "total_run_time":
-      return (time.time() - self._start_run_time) / 1e-6
+      return time_delta_ms(self._start_run_time, time.time())
     elif name == "total_run_time_str":
-      return format_time_period((time.time() - self._start_run_time) / 1e-6)
+      return format_ms(time_delta_ms(self._start_run_time, time.time()))
 
   def _run(self):
     while self._running:

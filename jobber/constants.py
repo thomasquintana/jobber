@@ -30,8 +30,8 @@ ACTOR_PROCESSOR_READY     = "Ready"
 ACTOR_PROCESSOR_RUNNING   = "Running"
 
 # Time periods expresses in microseconds.
-MU_SECOND         = int(1e6)
-MINUTE_MU_SECONDS = int(60 * MU_SECOND)
-HOUR_MU_SECONDS   = int(60 * MINUTE_MU_SECONDS)
-DAY_MU_SECONDS    = int(24 * HOUR_MU_SECONDS)
-WEEK_MU_SECONDS   = int(7  * DAY_MU_SECONDS)
+MS_SECOND = int(1e3)
+MS_MINUTE = int(60 * MS_SECOND)
+MS_HOUR   = int(60 * MS_MINUTE)
+MS_DAY    = int(24 * MS_HOUR)
+MS_WEEK   = int(7  * MS_DAY)
