@@ -19,8 +19,6 @@
 
 import sys
 
-from jobber.core.exceptions.error_during_import import ErrorDuringImport
-
 def load_class(fqn, force_load=0):
   """
   load an class by name or dotted path.
@@ -50,9 +48,7 @@ def load_class(fqn, force_load=0):
 
 def safe_import(fqn, force_load=False):
   '''
-  Import a module and return None if the module isn't found. If the module
-  *is* found but an exception occurs, it's wrapped in an ErrorDuringImport
-  exception and re-raised.
+  Import a module and return None if the module isn't found.
 
   Positional arguments:
   fqn        -- the classes fully qualified name.
@@ -75,24 +71,11 @@ def safe_import(fqn, force_load=False):
           cache[key] = sys.modules[key]
           del sys.modules[key]
     module = __import__(fqn)
-  except Exception:
-    # Did the error occur before or after the module was found?
-    (exc, value, _) = info = sys.exc_info()
-    if fqn in sys.modules:
-      # An error occurred while executing the imported module.
-      raise ErrorDuringImport(sys.modules[fqn].__file__, info)
-    elif exc is SyntaxError:
-      # A SyntaxError occurred before we could execute the module.
-      raise ErrorDuringImport(value.filename, info)
-    elif exc is ImportError and value.name == fqn:
-      # No such module in the path.
-      return None
-    else:
-      # Some other error occurred during the importing process.
-      raise ErrorDuringImport(fqn, sys.exc_info())
-  for part in fqn.split('.')[1:]:
+  except ImportError:
+    return None
+  for token in fqn.split('.')[1:]:
     try:
-      module = getattr(module, part)
+      module = getattr(module, token)
     except AttributeError:
       return None
   return module
