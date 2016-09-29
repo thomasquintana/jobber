@@ -20,7 +20,7 @@
 import logging
 import time
 
-from jobber.core.exceptions import InterruptException
+from jobber.core.exceptions.interrupt_exception import InterruptException
 from jobber.core.messages.poison_pill import PoisonPill
 from jobber.constants import ACTOR_PROCESSOR_COMPLETED, ACTOR_PROCESSOR_IDLE, \
                              ACTOR_PROCESSOR_READY, ACTOR_PROCESSOR_RUNNING

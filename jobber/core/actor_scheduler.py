@@ -22,7 +22,7 @@ import logging
 import random
 import time
 
-from jobber.core.exceptions import InterruptException
+from jobber.core.exceptions.interrupt_exception import InterruptException
 from jobber.constants import ACTOR_PROCESSOR_IDLE, ACTOR_PROCESSOR_READY
 from jobber.utils import format_ms, object_fqn, time_delta_ms
 

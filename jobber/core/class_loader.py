@@ -1,0 +1,98 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+# Thomas Quintana <quintana.thomas@gmail.com>
+
+import sys
+
+from jobber.core.exceptions.error_during_import import ErrorDuringImport
+
+def load_class(fqn, force_load=0):
+  """
+  load an class by name or dotted path.
+  """
+
+  offset = 0
+  module = None
+  tokens = [t for t in fqn.split('.') if t]
+  for idx in xrange(len(tokens)):
+    next_module = safe_import('.'.join(tokens[:idx + 1]), force_load)
+    if next_module:
+      module = next_module
+      offset += 1
+    else:
+      break
+  klass = None
+  if module:
+    klass = module
+  else:
+    klass = builtins
+  for token in tokens[offset:]:
+    try:
+      klass = getattr(klass, token)
+    except AttributeError:
+      return None
+  return klass
+
+def safe_import(fqn, force_load=False):
+  '''
+  Import a module and return None if the module isn't found. If the module
+  *is* found but an exception occurs, it's wrapped in an ErrorDuringImport
+  exception and re-raised.
+
+  Positional arguments:
+  fqn        -- the classes fully qualified name.
+
+  Keyword arguments:
+  force_load -- a flag indicating if a module should be reloaded from disk.
+  '''
+
+  cache = dict()
+  try:
+    # If force_load is True and the module has been previously loaded from
+    # disk, we have to reload the module.
+    if force_load and fqn in sys.modules:
+      if fqn not in sys.builtin_module_names:
+        # Remove any submodules because they won't appear in the newly loaded
+        # module's namespace if they're already in sys.modules.
+        sub_modules = [m for m in sys.modules if m.startswith(fqn + '.')]
+        for key in [fqn] + sub_modules:
+          # Prevent garbage collection.
+          cache[key] = sys.modules[key]
+          del sys.modules[key]
+    module = __import__(fqn)
+  except Exception:
+    # Did the error occur before or after the module was found?
+    (exc, value, _) = info = sys.exc_info()
+    if fqn in sys.modules:
+      # An error occurred while executing the imported module.
+      raise ErrorDuringImport(sys.modules[fqn].__file__, info)
+    elif exc is SyntaxError:
+      # A SyntaxError occurred before we could execute the module.
+      raise ErrorDuringImport(value.filename, info)
+    elif exc is ImportError and value.name == fqn:
+      # No such module in the path.
+      return None
+    else:
+      # Some other error occurred during the importing process.
+      raise ErrorDuringImport(fqn, sys.exc_info())
+  for part in fqn.split('.')[1:]:
+    try:
+      module = getattr(module, part)
+    except AttributeError:
+      return None
+  return module
