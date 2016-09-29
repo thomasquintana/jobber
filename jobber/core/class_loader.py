@@ -19,33 +19,6 @@
 
 import sys
 
-def load_class(fqn, force_load=0):
-  """
-  load an class by name or dotted path.
-  """
-
-  offset = 0
-  module = None
-  tokens = [t for t in fqn.split('.') if t]
-  for idx in xrange(len(tokens)):
-    next_module = safe_import('.'.join(tokens[:idx + 1]), force_load)
-    if next_module:
-      module = next_module
-      offset += 1
-    else:
-      break
-  klass = None
-  if module:
-    klass = module
-  else:
-    klass = builtins
-  for token in tokens[offset:]:
-    try:
-      klass = getattr(klass, token)
-    except AttributeError:
-      return None
-  return klass
-
 def safe_import(fqn, force_load=False):
   '''
   Import a module and return None if the module isn't found.
