@@ -25,28 +25,22 @@ from jobber.constants import JOBBER_CTX_HOSTNAME, JOBBER_CTX_PORT, \
 from jobber.errors import ACTOR_REF_INVALID_PATH, ACTOR_REF_INVALID_SCHEME
 
 class ActorSystem(object):
-  def __init__(self):
+  def __init__(self, address, port=5555, proc_count=None):
     super(ActorSystem, self).__init__()
+    self._address = address
+    self._port = port
+    self._proc_count = proc_count or cpu_count()
+
+  def _generate_path(self, parent_ref):
+    pass
 
   def _validate_path(self, context, path):
     if len(path.path) == 0:
       raise ValueError(ACTOR_REF_INVALID_PATH)
     if not path.scheme == JOBBER_SCHEME:
       raise ValueError(ACTOR_REF_INVALID_SCHEME)
-    path_tokens = ["%s://" % JOBBER_SCHEME]
-    if path.hostname is not None:
-      path_tokens.append(path.hostname)
-    else:
-      path_tokens.append(context.get(JOBBER_CTX_HOSTNAME, "localhost"))
-    path_tokens.append(":")
-    if path.port is not None:
-      path_tokens.append(str(path.port))
-    else:
-      path_tokens.append(str(context.get(JOBBER_CTX_PORT, JOBBER_PORT)))
-    path_tokens.append(path)
-    return urlparse(''.join(path_tokens))
 
-  def bootstrap(self, n_procs=None):
+  def bootstrap(self, address, port, proc_count=None):
     pass
 
   def create(self, fqn, *args, **kwargs):
@@ -56,6 +50,7 @@ class ActorSystem(object):
 
     # NOTE: This is typically bad and should make your linter complain.
     # Monkey patch the actor.
+    #self._actor.parent_ref = parent_ref
     #self._actor.actor_ref = actor_ref
     #self._actor.actor_system = self
 
