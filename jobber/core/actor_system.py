@@ -28,26 +28,11 @@ class ActorSystem(object):
   def __init__(self):
     super(ActorSystem, self).__init__()
 
-  def _validate_path(self, context, path):
-    if len(path.path) == 0:
-      raise ValueError(ACTOR_REF_INVALID_PATH)
-    if not path.scheme == JOBBER_SCHEME:
-      raise ValueError(ACTOR_REF_INVALID_SCHEME)
-    path_tokens = ["%s://" % JOBBER_SCHEME]
-    if path.hostname is not None:
-      path_tokens.append(path.hostname)
-    else:
-      path_tokens.append(context.get(JOBBER_CTX_HOSTNAME, "localhost"))
-    path_tokens.append(":")
-    if path.port is not None:
-      path_tokens.append(str(path.port))
-    else:
-      path_tokens.append(str(context.get(JOBBER_CTX_PORT, JOBBER_PORT)))
-    path_tokens.append(path)
-    return urlparse(''.join(path_tokens))
-
   def bootstrap(self):
     pass
 
   def create(self, fqn, *args, **kwargs):
+    pass
+
+  def locate(self, path):
     pass

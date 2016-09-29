@@ -17,6 +17,6 @@
 #
 # Thomas Quintana <quintana.thomas@gmail.com>
 
-class Registry(object):
+class MessageRouter(object):
   def __init__(self):
-    super(Registry, self).__init__()
+    super(Router, self).__init__()

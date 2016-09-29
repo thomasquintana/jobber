@@ -17,31 +17,6 @@
 #
 # Thomas Quintana <quintana.thomas@gmail.com>
 
-class ActorRef(object):
-  '''
-  
-  Positional Arguments:
-  mailbox   -- A reference to the referenced actor's mailbox.
-  path      -- A valid url path to the referenced actor.
-  uuid      -- A universally unique identifier for the referenced actor.
-  '''
-
-  def __init__(self, mailbox, path, uuid):
-    super(ActorRef, self).__init__()
-    self._mailbox = mailbox
-    self._path = path
-    self._urn = uuid
-    # NOTE: This is typically bad and should make your linter complain.
-    # Monkey patch the actor.
-    self._actor.actor_ref = self
-    # Schedule ourselves for execution.
-    self._scheduler.schedule(self)
-
-  def __getattr__(self, name):
-    if name == "path":
-      return self._path.geturl()
-    elif name == "urn":
-      return self._urn
-
-  def tell(self, message):
-    self._mailbox.append(message)
+class ActorRegistry(object):
+  def __init__(self):
+    super(ActorRegistry, self).__init__()

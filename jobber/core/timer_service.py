@@ -17,22 +17,6 @@
 #
 # Thomas Quintana <quintana.thomas@gmail.com>
 
-class Actor(object):
-  '''
-  An actor is the most basic unit of computation in an actor framework.
-  '''
-
+class TimerService(object):
   def __init__(self):
-    super(Actor, self).__init__()
-    self._actor_ref = None
-
-  def __setattr__(self, name, value):
-    if name == "actor_ref":
-      self._actor_ref = value
-
-  def receive(self, message):
-    '''
-    This method processes incoming messages.
-    '''
-
-    pass
+    super(TimerService, self).__init__()
