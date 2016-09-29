@@ -24,7 +24,7 @@ def safe_import(fqn, force_load=False):
   Import a module and return None if the module isn't found.
 
   Positional arguments:
-  fqn        -- the classes fully qualified name.
+  fqn -- the class fully qualified name.
 
   Keyword arguments:
   force_load -- a flag indicating if a module should be reloaded from disk.
