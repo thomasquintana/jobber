@@ -28,10 +28,41 @@ class ActorSystem(object):
   def __init__(self):
     super(ActorSystem, self).__init__()
 
-  def bootstrap(self):
+  def _validate_path(self, context, path):
+    if len(path.path) == 0:
+      raise ValueError(ACTOR_REF_INVALID_PATH)
+    if not path.scheme == JOBBER_SCHEME:
+      raise ValueError(ACTOR_REF_INVALID_SCHEME)
+    path_tokens = ["%s://" % JOBBER_SCHEME]
+    if path.hostname is not None:
+      path_tokens.append(path.hostname)
+    else:
+      path_tokens.append(context.get(JOBBER_CTX_HOSTNAME, "localhost"))
+    path_tokens.append(":")
+    if path.port is not None:
+      path_tokens.append(str(path.port))
+    else:
+      path_tokens.append(str(context.get(JOBBER_CTX_PORT, JOBBER_PORT)))
+    path_tokens.append(path)
+    return urlparse(''.join(path_tokens))
+
+  def bootstrap(self, n_procs=None):
     pass
 
   def create(self, fqn, *args, **kwargs):
+    # Load object.
+    # Validate that it's an actor and implements receive and receive is callable.
+    # Create actor reference
+
+    # NOTE: This is typically bad and should make your linter complain.
+    # Monkey patch the actor.
+    #self._actor.actor_ref = actor_ref
+    #self._actor.actor_system = self
+
+    
+    # Create actor processor
+    # Start the actor processor
+    # Return the actor reference.
     pass
 
   def locate(self, path):
