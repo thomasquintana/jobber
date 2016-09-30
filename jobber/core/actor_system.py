@@ -102,8 +102,6 @@ class ActorSystem(object):
     pass
 
   def start(self):
-    # TODO: Create the necessary items.
-    # Start the scheduler.
     self._scheduler.start()
 
   def shutdown(self):
