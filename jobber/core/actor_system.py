@@ -45,7 +45,7 @@ class ActorSystem(object):
     pass
 
   @staticmethod
-  def bootstrap_process0(name, pipes):
+  def bootstrap_process0(name, pipes, address=None, port=None):
     pass
 
   @staticmethod
@@ -78,7 +78,9 @@ class ActorSystem(object):
                 kwargs={}, name=proc_name, 
                 target=ActorSystem.bootstrap_process)
     # Bootstrap this process and have it join the other processes.
-    ActorSystem.bootstrap_process0("jobber-0", proc_ends[0])
+    ActorSystem.bootstrap_process0(
+      "jobber-0", proc_ends[0], address=address, port=port
+    )
 
   def create(self, fqn, *args, **kwargs):
     # Load object.
