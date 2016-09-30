@@ -41,13 +41,12 @@ class ActorSystem(object):
       raise ValueError(ACTOR_REF_INVALID_SCHEME)
 
   @staticmethod
-  def bootstrap_process(name, pipes, max_msgs_slice=10, max_time_slice=50):
-    router = MessageRouter()
-    scheduler = ActorScheduler(max_msgs_slice=10, max_time_slice=50)
+  def bootstrap_process(name, pipes, max_msgs_slice, max_time_slice):
+    scheduler = ActorScheduler(max_msgs_slice, max_time_slice)
 
   @staticmethod
-  def bootstrap_process0(name, pipes, address=None, port=JOBBER_PORT, \
-                         max_msgs_slice=10, max_time_slice=50):
+  def bootstrap_process0(name, pipes, max_msgs_slice, max_time_slice, \
+                         address=None, port=JOBBER_PORT):
     pass
 
   @staticmethod
@@ -77,16 +76,13 @@ class ActorSystem(object):
       proc_count = proc_count if proc_count else cpu_count()
       for proc_idx in xrange(1, proc_count - 1):
         proc_name = "jobber-%s" % proc_idx
-        Process(args=(proc_name, proc_ends[proc_idx]),
-                kwargs={
-                  "max_msgs_slice": max_msgs_slice,
-                  "max_time_slice": max_time_slice
-                },
+        Process(args=(proc_name, proc_ends[proc_idx],
+                      max_msgs_slice, max_time_slice),
                 name=proc_name, target=ActorSystem.bootstrap_process)
     # Bootstrap this process and have it join the other processes.
     ActorSystem.bootstrap_process0(
-      "jobber-0", proc_ends[0], address=address, port=port,
-      max_msgs_slice=max_msgs_slice, max_time_slice=max_time_slice
+      "jobber-0", proc_ends[0], max_msgs_slice, max_time_slice,
+      address=address, port=port
     )
 
   def create(self, fqn, *args, **kwargs):
