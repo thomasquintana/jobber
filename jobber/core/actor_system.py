@@ -45,6 +45,10 @@ class ActorSystem(object):
     pass
 
   @staticmethod
+  def bootstrap_process0(name, pipes):
+    pass
+
+  @staticmethod
   def bootstrap_system(address=None, port=None, proc_count=None):
     if proc_count <= 0:
       raise ValueError(ACTOR_SYSTEM_INVALID_PROC_COUNT)
@@ -66,18 +70,15 @@ class ActorSystem(object):
         (end0, end1) = Pipe(True)
         proc_ends[proc_count - 1].append(end0)
         proc_ends[0].append(end1)
-
-
-    # # Start the system processes and wire them up.
-    # proc_count = proc_count if proc_count else cpu_count()
-    # proc_count -= 1
-    # processes = list()
-    # for proc_idx in xrange(proc_count):
-    #   proc_name = "process-%s" % proc_idx
-    #   processes.append(Process(
-    #     args=(proc_name, read_pipes[proc_idx], write_pipes[proc_idx]),
-    #     kwargs={}, name=proc_name, target=ActorSystem.bootstrap_process
-    #   ))
+      # Bootstrap all the child processes.
+      proc_count = proc_count if proc_count else cpu_count()
+      for proc_idx in xrange(1, proc_count - 1):
+        proc_name = "jobber-%s" % proc_idx
+        Process(args=(proc_name, proc_ends[proc_idx], proc_ends[proc_idx]),
+                kwargs={}, name=proc_name, 
+                target=ActorSystem.bootstrap_process)
+    # Bootstrap this process and have it join the other processes.
+    ActorSystem.bootstrap_process0("jobber-0", proc_ends[0])
 
   def create(self, fqn, *args, **kwargs):
     # Load object.
