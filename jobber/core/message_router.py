@@ -17,7 +17,12 @@
 #
 # Thomas Quintana <quintana.thomas@gmail.com>
 
-class MessageRouter(object):
+
+
+class MessageRouter(Actor):
   def __init__(self, pipes):
     super(Router, self).__init__()
     self._pipes = pipes
+
+  def receive(self, message):
+    pass

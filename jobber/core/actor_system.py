@@ -51,7 +51,8 @@ class ActorSystem(object):
     pass
 
   @staticmethod
-  def bootstrap_system(address=None, port=None, proc_count=None):
+  def bootstrap_system(address=None, port=None, max_msgs_slice=10, \
+                       max_time_slice=50, proc_count=None):
     if proc_count <= 0:
       raise ValueError(ACTOR_SYSTEM_INVALID_PROC_COUNT)
     if proc_count - 1 > 0:
@@ -76,11 +77,16 @@ class ActorSystem(object):
       proc_count = proc_count if proc_count else cpu_count()
       for proc_idx in xrange(1, proc_count - 1):
         proc_name = "jobber-%s" % proc_idx
-        Process(args=(proc_name, proc_ends[proc_idx]), kwargs={},
-                name=proc_name,  target=ActorSystem.bootstrap_process)
+        Process(args=(proc_name, proc_ends[proc_idx]),
+                kwargs={
+                  "max_msgs_slice": max_msgs_slice,
+                  "max_time_slice": max_time_slice
+                },
+                name=proc_name, target=ActorSystem.bootstrap_process)
     # Bootstrap this process and have it join the other processes.
     ActorSystem.bootstrap_process0(
-      "jobber-0", proc_ends[0], address=address, port=port
+      "jobber-0", proc_ends[0], address=address, port=port,
+      max_msgs_slice=max_msgs_slice, max_time_slice=max_time_slice
     )
 
   def create(self, fqn, *args, **kwargs):
