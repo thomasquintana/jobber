@@ -18,5 +18,6 @@
 # Thomas Quintana <quintana.thomas@gmail.com>
 
 class MessageRouter(object):
-  def __init__(self):
+  def __init__(self, pipes):
     super(Router, self).__init__()
+    self._pipes = pipes

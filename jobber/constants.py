@@ -20,9 +20,6 @@
 JOBBER_PORT         = 5555
 JOBBER_SCHEME       = "jobber"
 
-JOBBER_CTX_HOSTNAME = "jobber_hostname"
-JOBBER_CTX_PORT     = "jobber_port"
-
 # Actor processor states.
 ACTOR_PROCESSOR_COMPLETED = "Completed"
 ACTOR_PROCESSOR_IDLE      = "Idle"

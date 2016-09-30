@@ -18,10 +18,10 @@
 # Thomas Quintana <quintana.thomas@gmail.com>
 
 from multiprocessing import cpu_count, Pipe, Process
-from urlparse import urlparse
 
-from jobber.constants import JOBBER_CTX_HOSTNAME, JOBBER_CTX_PORT, \
-                             JOBBER_PORT, JOBBER_SCHEME
+from jobber.constants import JOBBER_PORT, JOBBER_SCHEME
+from jobber.core.actor_scheduler import ActorScheduler
+from jobber.core.message_router import MessageRouter
 from jobber.errors import ACTOR_REF_INVALID_PATH, ACTOR_REF_INVALID_SCHEME, \
                           ACTOR_SYSTEM_INVALID_PROC_COUNT
 
@@ -41,11 +41,13 @@ class ActorSystem(object):
       raise ValueError(ACTOR_REF_INVALID_SCHEME)
 
   @staticmethod
-  def bootstrap_process(name, pipes):
-    pass
+  def bootstrap_process(name, pipes, max_msgs_slice=10, max_time_slice=50):
+    router = MessageRouter()
+    scheduler = ActorScheduler(max_msgs_slice=10, max_time_slice=50)
 
   @staticmethod
-  def bootstrap_process0(name, pipes, address=None, port=None):
+  def bootstrap_process0(name, pipes, address=None, port=JOBBER_PORT, \
+                         max_msgs_slice=10, max_time_slice=50):
     pass
 
   @staticmethod
@@ -74,9 +76,8 @@ class ActorSystem(object):
       proc_count = proc_count if proc_count else cpu_count()
       for proc_idx in xrange(1, proc_count - 1):
         proc_name = "jobber-%s" % proc_idx
-        Process(args=(proc_name, proc_ends[proc_idx], proc_ends[proc_idx]),
-                kwargs={}, name=proc_name, 
-                target=ActorSystem.bootstrap_process)
+        Process(args=(proc_name, proc_ends[proc_idx]), kwargs={},
+                name=proc_name,  target=ActorSystem.bootstrap_process)
     # Bootstrap this process and have it join the other processes.
     ActorSystem.bootstrap_process0(
       "jobber-0", proc_ends[0], address=address, port=port
@@ -92,7 +93,6 @@ class ActorSystem(object):
     #self._actor.parent_ref = parent_ref
     #self._actor.actor_ref = actor_ref
     #self._actor.actor_system = self
-
     
     # Create actor processor
     # Start the actor processor
