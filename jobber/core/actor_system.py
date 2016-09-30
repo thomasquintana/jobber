@@ -17,19 +17,19 @@
 #
 # Thomas Quintana <quintana.thomas@gmail.com>
 
-from multiprocessing import cpu_count
+from multiprocessing import cpu_count, Pipe, Process
 from urlparse import urlparse
 
 from jobber.constants import JOBBER_CTX_HOSTNAME, JOBBER_CTX_PORT, \
                              JOBBER_PORT, JOBBER_SCHEME
-from jobber.errors import ACTOR_REF_INVALID_PATH, ACTOR_REF_INVALID_SCHEME
+from jobber.errors import ACTOR_REF_INVALID_PATH, ACTOR_REF_INVALID_SCHEME, \
+                          ACTOR_SYSTEM_INVALID_PROC_COUNT
 
 class ActorSystem(object):
-  def __init__(self, address, port=5555, proc_count=None):
+  def __init__(self, router, scheduler):
     super(ActorSystem, self).__init__()
-    self._address = address
-    self._port = port
-    self._proc_count = proc_count or cpu_count()
+    self._router = router
+    self._scheduler = scheduler
 
   def _generate_path(self, parent_ref):
     pass
@@ -40,8 +40,49 @@ class ActorSystem(object):
     if not path.scheme == JOBBER_SCHEME:
       raise ValueError(ACTOR_REF_INVALID_SCHEME)
 
-  def bootstrap(self, address, port, proc_count=None):
+  @staticmethod
+  def bootstrap_process(name, pipes):
     pass
+
+  @staticmethod
+  def bootstrap_system(address=None, port=None, proc_count=None):
+    if proc_count <= 0:
+      raise ValueError(ACTOR_SYSTEM_INVALID_PROC_COUNT)
+    neighbor_count = proc_count - 1
+    if neighbor_count > 0:
+      # Create the necessary bi-directional pipe groups to wire the
+      # processes up in a start topology.
+      proc_ends = [list() * proc_count]
+      if proc_count == 2:
+        (end0, end1) = Pipe(True)
+        proc_ends[0].append(end0)
+        proc_ends[1].append(end1)
+      else:
+        pipe_count = (proc_count * (proc_count - 1)) / 2
+        # Group the outside edges first.
+        for idx in xrange(proc_count - 1):
+          (end0, end1) = Pipe(True)
+          proc_ends[idx].append(end0)
+          proc_ends[idx + 1].append(end1)
+        (end0, end1) = Pipe(True)
+        proc_ends[proc_count - 1].append(end0)
+        proc_ends[0].append(end1)
+        # If the number of processes is great than three then group
+        # the adjacent edges.
+        if proc_count > 3:
+          pass
+
+
+    # # Start the system processes and wire them up.
+    # proc_count = proc_count if proc_count else cpu_count()
+    # proc_count -= 1
+    # processes = list()
+    # for proc_idx in xrange(proc_count):
+    #   proc_name = "process-%s" % proc_idx
+    #   processes.append(Process(
+    #     args=(proc_name, read_pipes[proc_idx], write_pipes[proc_idx]),
+    #     kwargs={}, name=proc_name, target=ActorSystem.bootstrap_process
+    #   ))
 
   def create(self, fqn, *args, **kwargs):
     # Load object.
@@ -61,4 +102,7 @@ class ActorSystem(object):
     pass
 
   def locate(self, path):
+    pass
+
+  def shutdown(self):
     pass

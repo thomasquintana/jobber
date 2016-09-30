@@ -20,3 +20,6 @@
 ACTOR_REF_INVALID_PATH = "Invalid path. Please provide a valid actor path."
 ACTOR_REF_INVALID_SCHEME = "Invalid scheme. Please use jobber:// as your " \
                            "scheme."
+
+ACTOR_SYSTEM_INVALID_PROC_COUNT = "The proc_count field must be greater " \
+                                  "than or equal to 1."
