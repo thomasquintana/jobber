@@ -26,10 +26,12 @@ from jobber.errors import ACTOR_REF_INVALID_PATH, ACTOR_REF_INVALID_SCHEME, \
                           ACTOR_SYSTEM_INVALID_PROC_COUNT
 
 class ActorSystem(object):
-  def __init__(self, router, scheduler):
+  def __init__(self, name, conns, max_msgs_slice, max_time_slice,
+               address=None, port=None):
     super(ActorSystem, self).__init__()
-    self._router = router
-    self._scheduler = scheduler
+    self._proxy = None
+    self._router = None
+    self._scheduler = ActorScheduler(max_msgs_slice, max_time_slice)
 
   def _generate_path(self, parent_ref):
     pass
@@ -39,20 +41,12 @@ class ActorSystem(object):
       raise ValueError(ACTOR_REF_INVALID_PATH)
     if not path.scheme == JOBBER_SCHEME:
       raise ValueError(ACTOR_REF_INVALID_SCHEME)
-
-  @staticmethod
-  def bootstrap_process(name, pipes, max_msgs_slice, max_time_slice):
-    scheduler = ActorScheduler(max_msgs_slice, max_time_slice)
-
-  @staticmethod
-  def bootstrap_process0(name, pipes, max_msgs_slice, max_time_slice, \
-                         address=None, port=JOBBER_PORT):
-    pass
+    
 
   @staticmethod
   def bootstrap_system(address=None, port=None, max_msgs_slice=10, \
                        max_time_slice=50, proc_count=None):
-    if proc_count <= 0:
+    if proc_count is None or proc_count <= 0:
       raise ValueError(ACTOR_SYSTEM_INVALID_PROC_COUNT)
     if proc_count - 1 > 0:
       # Create the necessary bi-directional pipe groups to wire the
@@ -76,14 +70,17 @@ class ActorSystem(object):
       proc_count = proc_count if proc_count else cpu_count()
       for proc_idx in xrange(1, proc_count - 1):
         proc_name = "jobber-%s" % proc_idx
-        Process(args=(proc_name, proc_ends[proc_idx],
-                      max_msgs_slice, max_time_slice),
-                name=proc_name, target=ActorSystem.bootstrap_process)
+        proc = ActorSystem(
+          proc_name, proc_ends[proc_idx], max_msgs_slice, max_time_slice,
+          address=address, port=port
+        )
+        Process(name=proc_name, target=proc.start)
     # Bootstrap this process and have it join the other processes.
-    ActorSystem.bootstrap_process0(
+    actor_system = ActorSystem(
       "jobber-0", proc_ends[0], max_msgs_slice, max_time_slice,
       address=address, port=port
     )
+    actor_system.start()
 
   def create(self, fqn, *args, **kwargs):
     # Load object.
@@ -103,6 +100,11 @@ class ActorSystem(object):
 
   def locate(self, path):
     pass
+
+  def start(self):
+    # TODO: Create the necessary items.
+    # Start the scheduler.
+    self._scheduler.start()
 
   def shutdown(self):
     pass
