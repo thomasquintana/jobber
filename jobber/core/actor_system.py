@@ -41,8 +41,7 @@ class ActorSystem(object):
       raise ValueError(ACTOR_REF_INVALID_PATH)
     if not path.scheme == JOBBER_SCHEME:
       raise ValueError(ACTOR_REF_INVALID_SCHEME)
-    
-
+  
   @staticmethod
   def bootstrap_system(address=None, port=None, max_msgs_slice=10, \
                        max_time_slice=50, proc_count=None):
@@ -89,7 +88,6 @@ class ActorSystem(object):
 
     # NOTE: This is typically bad and should make your linter complain.
     # Monkey patch the actor.
-    #self._actor.parent_ref = parent_ref
     #self._actor.actor_ref = actor_ref
     #self._actor.actor_system = self
     
@@ -98,7 +96,7 @@ class ActorSystem(object):
     # Return the actor reference.
     pass
 
-  def locate(self, path):
+  def find(self, fqn):
     pass
 
   def start(self):

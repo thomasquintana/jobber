@@ -16,13 +16,3 @@
 # under the License.
 #
 # Thomas Quintana <quintana.thomas@gmail.com>
-
-class ActorRegistry(object):
-  def __init__(self):
-    super(ActorRegistry, self).__init__()
-
-  def register(self, actor_ref, global=True, singleton=True):
-    pass
-
-  def unregister(self, actor_ref):
-    pass

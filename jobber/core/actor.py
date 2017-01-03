@@ -27,17 +27,9 @@ class Actor(object):
     self._actor_ref = None
     self._actor_system = None
 
-  @property
-  def actor_ref(self):
-    return self._actor_ref
-
   @actor_ref.setter
   def actor_ref(self, actor_ref):
     self._actor_ref = actor_ref
-
-  @property
-  def actor_system(self):
-    return self._actor_system
 
   @actor_system.setter
   def actor_system(self, actor_system):
