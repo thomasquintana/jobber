@@ -23,6 +23,7 @@ import random
 import time
 
 from jobber.core.exceptions.interrupt_exception import InterruptException
+from jobber.core.messages.poison_pill import PoisonPill
 from jobber.constants import ACTOR_PROCESSOR_IDLE, ACTOR_PROCESSOR_READY
 from jobber.utils import format_ms, object_fqn, time_delta_ms
 
@@ -44,7 +45,11 @@ class ActorScheduler(object):
     self._total_msgs_processed = 0
 
   def _run(self):
-    while self._running:
+    n_running_actors = len(self._idle_actor_procs) + \
+                       len(self._ready_actor_procs) + \
+                       len(self._waiting_actor_procs)
+    self._start_run_time = time.time()
+    while self._running or n_running_actors > 0:
       # Check the idle actor processors list for actors with new messages.
       if len(self._idle_actor_procs) > 0:
         temp = list()
@@ -88,6 +93,11 @@ class ActorScheduler(object):
             self._idle_actor_procs.append(self._curr_actor_proc)
           elif self._curr_actor_proc.state == ACTOR_PROCESSOR_READY:
             self._waiting_actor_procs.append(self._curr_actor_proc)
+      # Update the number of running actors.
+      n_running_actors = len(self._idle_actor_procs) + \
+                         len(self._ready_actor_procs) + \
+                         len(self._waiting_actor_procs)
+    self._stop_run_time = time.time()
 
   def interrupt(self):
     # Constrain the actor to the max time slice.
@@ -101,12 +111,16 @@ class ActorScheduler(object):
     self._idle_actor_procs.append(actor_proc)
 
   def shutdown(self):
+    # Stop all the actor processors.
+    actor_procs = self._waiting_actor_procs + self._idle_actor_procs + \
+                  self._ready_actor_procs
+    poison_pill = PoisonPill()
+    for actor_proc in actor_procs:
+      actor_proc.tell(poison_pill)
     self._running = False
-    self._stop_run_time = time.time()
 
   def start(self):
     self._running = True
-    self._start_run_time = time.time()
     self._run()
 
   @property
@@ -115,7 +129,15 @@ class ActorScheduler(object):
 
   @property
   def total_run_time(self):
-    return time_delta_ms(self._start_run_time, time.time())
+    total_run_time = 0
+    if not self._start_run_time is None:
+      if self._stop_run_time is None:
+        total_run_time = time_delta_ms(self._start_run_time, time.time())
+      else:
+        total_run_time = time_delta_ms(
+          self._start_run_time, self._stop_run_time
+        )
+    return total_run_time
 
   @property
   def total_run_time_str(self):

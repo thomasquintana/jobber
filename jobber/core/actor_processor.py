@@ -68,7 +68,6 @@ class ActorProcessor(object):
         self._state = ACTOR_PROCESSOR_RUNNING
         # Take a message from the head of the queue.
         message = self._mailbox.pop(0)
-        # If we get a poison pill we must die.
         if isinstance(message, PoisonPill):
           self.stop()
           break
