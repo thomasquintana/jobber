@@ -22,21 +22,23 @@ class ActorRef(object):
   
   Positional Arguments:
   mailbox   -- A reference to the referenced actor's mailbox.
-  path      -- A valid url path to the referenced actor.
+  url       -- A valid url to the referenced actor.
   uuid      -- A universally unique identifier for the referenced actor.
   '''
 
-  def __init__(self, mailbox, path, uuid):
+  def __init__(self, mailbox, url, uuid):
     super(ActorRef, self).__init__()
     self._mailbox = mailbox
-    self._path = path
+    self._url = url
     self._urn = uuid
 
-  def __getattr__(self, name):
-    if name == "path":
-      return self._path.geturl()
-    elif name == "urn":
-      return self._urn
+  @property
+  def url(self):
+    return self._url
 
   def tell(self, message):
     self._mailbox.append(message)
+
+  @property
+  def urn(self):
+    return self._urn

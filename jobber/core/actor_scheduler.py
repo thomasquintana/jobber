@@ -43,14 +43,6 @@ class ActorScheduler(object):
     self._stop_run_time = 0.
     self._total_msgs_processed = 0
 
-  def __getattr__(self, name):
-    if name == "total_msgs_processed":
-      return self._total_msgs_processed
-    elif name == "total_run_time":
-      return time_delta_ms(self._start_run_time, time.time())
-    elif name == "total_run_time_str":
-      return format_ms(time_delta_ms(self._start_run_time, time.time()))
-
   def _run(self):
     while self._running:
       # Check the idle actor processors list for actors with new messages.
@@ -116,3 +108,15 @@ class ActorScheduler(object):
     self._running = True
     self._start_run_time = time.time()
     self._run()
+
+  @property
+  def total_msgs_processed(self):
+    return self._total_msgs_processed
+
+  @property
+  def total_run_time(self):
+    return time_delta_ms(self._start_run_time, time.time())
+
+  @property
+  def total_run_time_str(self):
+    return format_ms(time_delta_ms(self._start_run_time, time.time()))

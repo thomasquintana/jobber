@@ -49,29 +49,9 @@ class ActorProcessor(object):
     self._total_msg_count = 0
     self._total_run_time = 0
 
-  def __getattr__(self, name):
-    if name == "adjusted_priority":
-      return self._adj_priority
-    elif name == "pending_msg_count":
-      return len(self._mailbox)
-    elif name == "slice_msg_count":
-      return self._slice_msg_count
-    elif name == "slice_penalty":
-      return self._slice_penalty
-    elif name == "slice_run_time":
-      return self._slice_run_time
-    elif name == "state":
-      return self._state
-    elif name == "total_msg_count":
-      return self._total_msg_count
-    elif name == "total_run_time":
-      return self._total_run_time
-    elif name == "urn":
-      return self._urn
-
-  def __setattr__(self, name, value):
-    if name == "slice_penalty":
-      self._slice_penalty = value
+  @property
+  def adjusted_priority(self):
+    return self._adj_priority
 
   def execute(self):
     '''
@@ -117,6 +97,26 @@ class ActorProcessor(object):
     self._total_msg_count += self._slice_msg_count
     self._total_run_time += self._slice_run_time
 
+  @property
+  def pending_msg_count(self):
+    return len(self._mailbox)
+
+  @property
+  def slice_msg_count(self):
+    return self._slice_msg_count
+
+  @property
+  def slice_penalty(self):
+    return self._slice_penalty
+
+  @slice_penalty.setter
+  def slice_penalty(self, penalty):
+    self._slice_penalty = penalty
+
+  @property
+  def slice_run_time(self):
+    return self._slice_run_time
+
   def start(self):
     # If the actor defined an on_start method now is a good
     # time to call it.
@@ -126,6 +126,10 @@ class ActorProcessor(object):
     self._state = ACTOR_PROCESSOR_IDLE
     self._scheduler.schedule(self)
 
+  @property
+  def state(self):
+    return self._state
+
   def stop(self):
     self._state = ACTOR_PROCESSOR_COMPLETED
     # If the actor defined an on_stop method now is a good
@@ -133,3 +137,15 @@ class ActorProcessor(object):
     if hasattr(self._actor, "on_stop"):
       if callable(self._actor.on_stop):
         self._actor.on_stop()
+
+  @property
+  def total_msg_count(self):
+    return self._total_msg_count
+
+  @property
+  def total_run_time(self):
+    return self._total_run_time
+
+  @property
+  def urn(self):
+    return self._urn

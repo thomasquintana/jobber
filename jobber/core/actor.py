@@ -25,12 +25,23 @@ class Actor(object):
   def __init__(self):
     super(Actor, self).__init__()
     self._actor_ref = None
+    self._actor_system = None
 
-  def __setattr__(self, name, value):
-    if name == "actor_ref":
-      self._actor_ref = value
-    elif name == "actor_system":
-      self._actor_system = value
+  @property
+  def actor_ref(self):
+    return self._actor_ref
+
+  @actor_ref.setter
+  def actor_ref(self, actor_ref):
+    self._actor_ref = actor_ref
+
+  @property
+  def actor_system(self):
+    return self._actor_system
+
+  @actor_system.setter
+  def actor_system(self, actor_system):
+    self.actor_system = actor_system
 
   def receive(self, message):
     '''
