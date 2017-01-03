@@ -29,8 +29,6 @@ class ActorSystem(object):
   def __init__(self, name, conns, max_msgs_slice, max_time_slice,
                address=None, port=None):
     super(ActorSystem, self).__init__()
-    self._proxy = None
-    self._router = None
     self._scheduler = ActorScheduler(max_msgs_slice, max_time_slice)
 
   def _generate_path(self, parent_ref):
