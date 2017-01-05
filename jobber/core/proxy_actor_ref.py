@@ -29,7 +29,7 @@ class ProxyActorRef(object):
   '''
 
   def __init__(self, mailbox, url, uuid):
-    super(ActorRef, self).__init__()
+    super(ProxyActorRef, self).__init__()
     self._url = url
     self._urn = uuid
 

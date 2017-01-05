@@ -82,7 +82,7 @@ class ActorProcessor(object):
         # interrupt() method.
         self._slice_msg_count += 1
         self._slice_run_time += time_delta_ms(start_time, end_time)
-        # Try to return control of the processor to the scheduler if
+        # Try to return control of the processor to the scheduler. If
         # the scheduler fires an InterruptException we hand over control
         # and if it doesn't we keep processing messages.
         try:

@@ -43,33 +43,26 @@ class ActorSystem(object):
   @staticmethod
   def bootstrap_system(address=None, port=None, max_msgs_slice=10, \
                        max_time_slice=50, proc_count=None):
-    if proc_count is None or proc_count <= 0:
-      raise ValueError(ACTOR_SYSTEM_INVALID_PROC_COUNT)
-    if proc_count - 1 > 0:
+    if proc_count is None:
+      proc_count = cpu_count()
+    else:
+      if proc_count <= 0:
+        raise ValueError(ACTOR_SYSTEM_INVALID_PROC_COUNT)
+    if proc_count > 1:
       # Create the necessary bi-directional pipe groups to wire the
       # processes up in a star topology.
-      proc_ends = [list() * proc_count]
-      if proc_count == 2:
-        (end0, end1) = Pipe(True)
-        proc_ends[0].append(end0)
-        proc_ends[1].append(end1)
-      else:
-        for proc_idx in xrange(proc_count - 1):
-          missing_conn_count = proc_count - (proc_idx + 1)
-          for neighbor_idx in xrange(1, missing_conn_count):
-            (end0, end1) = Pipe(True)
-            proc_ends[proc_idx].append(end0)
-            proc_ends[proc_idx + neighbor_idx].append(end1)
-        (end0, end1) = Pipe(True)
-        proc_ends[proc_count - 1].append(end0)
-        proc_ends[0].append(end1)
+      proc_ends = [list() for _ in xrange(proc_count)]
+      for proc_idx in xrange(proc_count - 1):
+        missing_conn_count = proc_count - (proc_idx + 1)
+        for neighbor_idx in xrange(1, missing_conn_count + 1):
+          (end0, end1) = Pipe(True)
+          proc_ends[proc_idx].append(end0)
+          proc_ends[proc_idx + neighbor_idx].append(end1)
       # Bootstrap all the child processes.
-      proc_count = proc_count if proc_count else cpu_count()
-      for proc_idx in xrange(1, proc_count - 1):
+      for proc_idx in xrange(1, proc_count):
         proc_name = "jobber-%s" % proc_idx
         proc = ActorSystem(
-          proc_name, proc_ends[proc_idx], max_msgs_slice, max_time_slice,
-          address=address, port=port
+          proc_name, proc_ends[proc_idx], max_msgs_slice, max_time_slice
         )
         Process(name=proc_name, target=proc.start)
     # Bootstrap this process and have it join the other processes.
@@ -94,11 +87,15 @@ class ActorSystem(object):
     # Return the actor reference.
     pass
 
-  def find(self, fqn):
+  def find_global(self, fqn):
+    pass
+
+  def find_local(self, fqn):
     pass
 
   def start(self):
-    self._scheduler.start()
+    print "Hello"
+    #self._scheduler.start()
 
   def shutdown(self):
     pass
