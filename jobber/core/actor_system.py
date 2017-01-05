@@ -94,6 +94,9 @@ class ActorSystem(object):
     pass
 
   def find_local(self, fqn):
+    '''
+    Returns an actor ref
+    '''
     pass
 
   def start(self):

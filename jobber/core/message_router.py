@@ -17,37 +17,28 @@
 #
 # Thomas Quintana <quintana.thomas@gmail.com>
 
+try:
+   import cPickle as pickle
+except:
+   import pickle
 import socket
 import threading
 
 from jobber.core.actor import Actor
 from jobber.core.messages.datagram import Datagram
 
-class SocketReader(threading.Thread):
-  def __init__(self, router, sock):
-    super(SocketReader, self).__init__()
-    self._running = True
-    self._router = router
-    self._socket = sock
-
-  def run(self):
-    while self._running:
-      data, _ = self._socket.recvfrom(1024)
-      # TODO: Deserialize the message and add to router mailbox.
-
-  def shutdown(self):
-    self._running = False
-
 class MessageRouter(Actor):
   def __init__(self, name, ip, port, local_conns, gateway=False):
     super(MessageRouter, self).__init__()
+    self._gateway = gateway
     self._local_name = name
     self._local_ip = ip
     self._local_port = port
     self._local_conns = local_conns
     self._local_conns_lookup = None
     self._local_gateway_idx = None
-    self._gateway = gateway
+    self._messages_rx = 0
+    self._messages_tx = 0
     self._udp_sock = None
     self._udp_sock_reader = None
 
@@ -75,9 +66,10 @@ class MessageRouter(Actor):
           gateway = self._local_conns[gateway_idx]
           gateway.send(message)
       else:
-        # TODO: Serialize the message.
         # Send the message to another host or actor system via UDP.
-        self._udp_sock.sendto(message, (self._local_ip, self._local_port))
+        self._udp_sock.sendto(
+          pickle.dumps(message), (self._local_ip, self._local_port)
+        )
 
   def on_start(self):
     # Bootstrap the local connections.
@@ -98,7 +90,7 @@ class MessageRouter(Actor):
     if self._gateway:
       self._udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
       self._udp_sock.bind((self._local_ip, self._local_port))
-      self._udp_sock_reader = SocketReader(self, self._udp_sock)
+      self._udp_sock_reader = SocketReader(self.actor_ref, self._udp_sock)
 
   def on_stop(self):
     if self._gateway:
@@ -112,3 +104,17 @@ class MessageRouter(Actor):
 
     if isinstance(message, Datagram):
       self.on_datagram(message)
+
+class SocketReader(threading.Thread):
+  def __init__(self, router, sock):
+    super(SocketReader, self).__init__()
+    self._running = True
+    self._router = router
+    self._socket = sock
+
+  def run(self):
+    while self._running:
+      self._router.tell(pickle.loads(self._socket.recvfrom(65535)[0]))
+
+  def shutdown(self):
+    self._running = False
