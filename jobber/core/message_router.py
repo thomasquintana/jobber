@@ -18,5 +18,6 @@
 # Thomas Quintana <quintana.thomas@gmail.com>
 
 class MessageRouter(object):
-  def __init__(self):
+  def __init__(self, actor_system, connections, ip=None, port=None):
     super(MessageRouter, self).__init__()
+    self._connections = connections

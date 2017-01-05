@@ -26,9 +26,11 @@ from jobber.errors import ACTOR_REF_INVALID_PATH, ACTOR_REF_INVALID_SCHEME, \
                           ACTOR_SYSTEM_INVALID_PROC_COUNT
 
 class ActorSystem(object):
-  def __init__(self, name, conns, max_msgs_slice, max_time_slice,
-               address=None, port=None):
+  def __init__(self, name, connections, max_msgs_slice, max_time_slice,
+               ip=None, port=None):
     super(ActorSystem, self).__init__()
+    self._name = name
+    self._router = MessageRouter(self, connections, ip, port)
     self._scheduler = ActorScheduler(max_msgs_slice, max_time_slice)
 
   def _generate_path(self, parent_ref):
@@ -41,34 +43,38 @@ class ActorSystem(object):
       raise ValueError(ACTOR_REF_INVALID_SCHEME)
   
   @staticmethod
-  def bootstrap_system(address=None, port=None, max_msgs_slice=10, \
+  def bootstrap_system(ip=None, port=None, max_msgs_slice=10, \
                        max_time_slice=50, proc_count=None):
     if proc_count is None:
       proc_count = cpu_count()
     else:
       if proc_count <= 0:
         raise ValueError(ACTOR_SYSTEM_INVALID_PROC_COUNT)
+    proc_conns = None
     if proc_count > 1:
       # Create the necessary bi-directional pipe groups to wire the
       # processes up in a star topology.
-      proc_ends = [list() for _ in xrange(proc_count)]
+      proc_conns = [list() for _ in xrange(proc_count)]
       for proc_idx in xrange(proc_count - 1):
         missing_conn_count = proc_count - (proc_idx + 1)
         for neighbor_idx in xrange(1, missing_conn_count + 1):
           (end0, end1) = Pipe(True)
-          proc_ends[proc_idx].append(end0)
-          proc_ends[proc_idx + neighbor_idx].append(end1)
+          proc_conns[proc_idx].append(end0)
+          proc_conns[proc_idx + neighbor_idx].append(end1)
       # Bootstrap all the child processes.
       for proc_idx in xrange(1, proc_count):
-        proc_name = "jobber-%s" % proc_idx
-        proc = ActorSystem(
-          proc_name, proc_ends[proc_idx], max_msgs_slice, max_time_slice
+        name = "jobber-%s" % proc_idx
+        target = ActorSystem(
+          name, proc_conns[proc_idx], max_msgs_slice, max_time_slice
         )
-        Process(name=proc_name, target=proc.start)
+        proc = Process(name=name, target=target.start)
+        proc.start()
     # Bootstrap this process and have it join the other processes.
+    connections = None
+    if proc_conns is not None:
+      connections = proc_conns[0]
     actor_system = ActorSystem(
-      "jobber-0", proc_ends[0], max_msgs_slice, max_time_slice,
-      address=address, port=port
+      "jobber-0", connections, max_msgs_slice, max_time_slice, ip=ip, port=port
     )
     actor_system.start()
 
@@ -94,8 +100,7 @@ class ActorSystem(object):
     pass
 
   def start(self):
-    print "Hello"
-    #self._scheduler.start()
+    pass
 
   def shutdown(self):
     pass
