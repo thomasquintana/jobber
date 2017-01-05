@@ -28,6 +28,10 @@ from jobber.constants import ACTOR_PROCESSOR_IDLE, ACTOR_PROCESSOR_READY
 from jobber.utils import format_ms, object_fqn, time_delta_ms
 
 class ActorScheduler(object):
+  '''
+  A naive scheduler implementation for actors.
+  '''
+
   def __init__(self, max_msgs_slice, max_time_slice):
     super(ActorScheduler, self).__init__()
     self._logger = logging.getLogger(object_fqn(self))

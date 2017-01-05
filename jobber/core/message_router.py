@@ -17,42 +17,78 @@
 #
 # Thomas Quintana <quintana.thomas@gmail.com>
 
-from urlparse import urlparse
+import socket, thread
 
-from jobber.constants import JOBBER_SCHEME
 from jobber.core.actor import Actor
+from jobber.core.messages.datagram import Datagram
 
 class MessageRouter(Actor):
-  def __init__(self, name, ip, port, local_conns):
+  def __init__(self, name, ip, port, local_conns, gateway=False):
     super(MessageRouter, self).__init__()
     self._local_name = name
     self._local_ip = ip
     self._local_port = port
     self._local_conns = local_conns
     self._local_conns_lookup = None
+    self._local_gateway_idx = None
+    self._gateway = gateway
+    self._udp_sock = None
+
+  def on_datagram(self, message):
+    destination = message.destination
+    if destination.hostname == self._local_ip and \
+       destination.port == self._local_port:
+      # Handle messages destined for our host.
+      tokens = destination.path[1:].split("/")
+      if tokens[0] == self._local_name:
+        # Handle messages destined for our process.
+        actor_ref = self.actor_system.find_local(".".join(tokens[1:-1]))
+        if actor_ref is not None:
+          actor_ref.tell(message)
+      else:
+        # Handle messages destined for a different process.
+        conn = self._local_conns[self._local_conns_lookup[tokens[0]]]
+        conn.send(message)
+    else:
+      # Handle messages destined for other hosts.
+      if not self._gateway:
+        # Use a gateway.
+        gateway_idx = self._local_gateway_idx
+        if gateway_idx is not None:
+          gateway = self._local_conns[gateway_idx]
+          gateway.send(message)
+      else:
+        # Send the message to another host or actor system via UDP.
+        self._udp_sock.sendto(message, (self._local_ip, self._local_port))
 
   def on_start(self):
-    local_conns = self._local_conns
-    name = self._local_name
-    ip = self._local_ip
-    port = self._local_port
-    if local_conns is not None and len(local_conns) > 0:
-      # Generate our address and broadcast it to the other local processes.
-      if ip is not None and len(ip) > 0 and \
-         port is not None and name is not None and \
-         len(name) > 0:
-        url = urlparse("{}://{}:{}/{}".format(JOBBER_SCHEME, ip, port, name))
-        for connection in local_conns:
-          connection.send(url)
-      # Create a lookup table of addresses to the other local processes.
+    # Bootstrap the local connections.
+    conns = self._local_conns
+    if conns is not None and len(conns) > 0:
+      # Broadcast our identity to the other processes.
+      for connection in conns:
+        connection.send((self._local_name, self._gateway))
+      # Create a lookup table to the other processes.
       lookup_table = dict()
-      for idx, connection in enumerate(local_conns):
-        url = connection.recv()
-        key = url.path[1:]
-        lookup_table.update({key: idx})
-        print name, idx, connection
+      for idx, connection in enumerate(conns):
+        name, gateway = connection.recv()
+        lookup_table.update({name: idx})
+        if gateway:
+          self._local_gateway_idx = idx
       self._local_conns_lookup = lookup_table
-    print self._local_conns_lookup
+    # Setup the public interface.
+    if self._gateway:
+      self._udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+      self._udp_sock.bind((self._local_ip, self._local_port))
 
   def on_stop(self):
-    pass
+    if self._gateway:
+      self._udp_sock.close()
+
+  def receive(self, message):
+    '''
+    This method processes incoming messages.
+    '''
+
+    if isinstance(message, Datagram):
+      self.on_datagram(message)

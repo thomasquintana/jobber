@@ -27,22 +27,18 @@ from jobber.errors import ACTOR_REF_INVALID_PATH, ACTOR_REF_INVALID_SCHEME, \
 
 class ActorSystem(object):
   def __init__(self, name, connections, max_msgs_slice, max_time_slice,
-               ip, port):
+               ip, port, gateway):
     super(ActorSystem, self).__init__()
     self._connections = connections
     self._name = name
-    self._router = MessageRouter(name, ip, port, connections)
-    self._router.on_start()
-    self._scheduler = None
+    self._router = MessageRouter(name, ip, port, connections, gateway=gateway)
+    self._scheduler = ActorScheduler(max_msgs_slice, max_time_slice)
   
   @staticmethod
   def bootstrap_system(ip=LOCAL_HOST, port=JOBBER_PORT, max_msgs_slice=10, \
-                       max_time_slice=50, proc_count=None):
-    if proc_count is None:
-      proc_count = cpu_count()
-    else:
-      if proc_count <= 0:
-        raise ValueError(ACTOR_SYSTEM_INVALID_PROC_COUNT)
+                       max_time_slice=50, proc_count=cpu_count()):
+    if proc_count <= 0:
+      raise ValueError(ACTOR_SYSTEM_INVALID_PROC_COUNT)
     proc_conns = None
     if proc_count > 1:
       # Create the necessary bi-directional pipe groups to wire the
@@ -58,7 +54,8 @@ class ActorSystem(object):
       for proc_idx in xrange(1, proc_count):
         name = "jobber-%s" % proc_idx
         target = ActorSystem(
-          name, proc_conns[proc_idx], max_msgs_slice, max_time_slice, ip, port
+          name, proc_conns[proc_idx], max_msgs_slice, max_time_slice, ip, port,
+          gateway=False
         )
         proc = Process(name=name, target=target.start)
         proc.start()
@@ -67,12 +64,13 @@ class ActorSystem(object):
     if proc_conns is not None:
       connections = proc_conns[0]
     actor_system = ActorSystem(
-      "jobber-0", connections, max_msgs_slice, max_time_slice, ip, port
+      "jobber-0", connections, max_msgs_slice, max_time_slice, ip, port,
+      gateway=True
     )
     actor_system.start()
     return actor_system
 
-  def create(self, fqn, *args, **kwargs):
+  def create(self, fqn, visibility="local", *args, **kwargs):
     # Load object.
     # Validate that it's an actor and implements receive and receive is callable.
     # Create actor reference
@@ -94,6 +92,7 @@ class ActorSystem(object):
     pass
 
   def start(self):
+    self._router.on_start()
     #print self._name
     #print self._connections
     pass
