@@ -17,7 +17,42 @@
 #
 # Thomas Quintana <quintana.thomas@gmail.com>
 
-class MessageRouter(object):
-  def __init__(self, actor_system, connections, ip=None, port=None):
+from urlparse import urlparse
+
+from jobber.constants import JOBBER_SCHEME
+from jobber.core.actor import Actor
+
+class MessageRouter(Actor):
+  def __init__(self, name, ip, port, local_conns):
     super(MessageRouter, self).__init__()
-    self._connections = connections
+    self._local_name = name
+    self._local_ip = ip
+    self._local_port = port
+    self._local_conns = local_conns
+    self._local_conns_lookup = None
+
+  def on_start(self):
+    local_conns = self._local_conns
+    name = self._local_name
+    ip = self._local_ip
+    port = self._local_port
+    if local_conns is not None and len(local_conns) > 0:
+      # Generate our address and broadcast it to the other local processes.
+      if ip is not None and len(ip) > 0 and \
+         port is not None and name is not None and \
+         len(name) > 0:
+        url = urlparse("{}://{}:{}/{}".format(JOBBER_SCHEME, ip, port, name))
+        for connection in local_conns:
+          connection.send(url)
+      # Create a lookup table of addresses to the other local processes.
+      lookup_table = dict()
+      for idx, connection in enumerate(local_conns):
+        url = connection.recv()
+        key = url.path[1:]
+        lookup_table.update({key: idx})
+        print name, idx, connection
+      self._local_conns_lookup = lookup_table
+    print self._local_conns_lookup
+
+  def on_stop(self):
+    pass

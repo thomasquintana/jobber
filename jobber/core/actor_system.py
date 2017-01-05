@@ -19,7 +19,7 @@
 
 from multiprocessing import cpu_count, Pipe, Process
 
-from jobber.constants import JOBBER_PORT, JOBBER_SCHEME
+from jobber.constants import JOBBER_PORT, LOCAL_HOST
 from jobber.core.actor_scheduler import ActorScheduler
 from jobber.core.message_router import MessageRouter
 from jobber.errors import ACTOR_REF_INVALID_PATH, ACTOR_REF_INVALID_SCHEME, \
@@ -27,23 +27,16 @@ from jobber.errors import ACTOR_REF_INVALID_PATH, ACTOR_REF_INVALID_SCHEME, \
 
 class ActorSystem(object):
   def __init__(self, name, connections, max_msgs_slice, max_time_slice,
-               ip=None, port=None):
+               ip, port):
     super(ActorSystem, self).__init__()
+    self._connections = connections
     self._name = name
-    self._router = MessageRouter(self, connections, ip, port)
-    self._scheduler = ActorScheduler(max_msgs_slice, max_time_slice)
-
-  def _generate_path(self, parent_ref):
-    pass
-
-  def _validate_path(self, context, path):
-    if len(path.path) == 0:
-      raise ValueError(ACTOR_REF_INVALID_PATH)
-    if not path.scheme == JOBBER_SCHEME:
-      raise ValueError(ACTOR_REF_INVALID_SCHEME)
+    self._router = MessageRouter(name, ip, port, connections)
+    self._router.on_start()
+    self._scheduler = None
   
   @staticmethod
-  def bootstrap_system(ip=None, port=None, max_msgs_slice=10, \
+  def bootstrap_system(ip=LOCAL_HOST, port=JOBBER_PORT, max_msgs_slice=10, \
                        max_time_slice=50, proc_count=None):
     if proc_count is None:
       proc_count = cpu_count()
@@ -65,7 +58,7 @@ class ActorSystem(object):
       for proc_idx in xrange(1, proc_count):
         name = "jobber-%s" % proc_idx
         target = ActorSystem(
-          name, proc_conns[proc_idx], max_msgs_slice, max_time_slice
+          name, proc_conns[proc_idx], max_msgs_slice, max_time_slice, ip, port
         )
         proc = Process(name=name, target=target.start)
         proc.start()
@@ -74,9 +67,10 @@ class ActorSystem(object):
     if proc_conns is not None:
       connections = proc_conns[0]
     actor_system = ActorSystem(
-      "jobber-0", connections, max_msgs_slice, max_time_slice, ip=ip, port=port
+      "jobber-0", connections, max_msgs_slice, max_time_slice, ip, port
     )
     actor_system.start()
+    return actor_system
 
   def create(self, fqn, *args, **kwargs):
     # Load object.
@@ -100,6 +94,8 @@ class ActorSystem(object):
     pass
 
   def start(self):
+    #print self._name
+    #print self._connections
     pass
 
   def shutdown(self):
