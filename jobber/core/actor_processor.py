@@ -34,24 +34,19 @@ class ActorProcessor(object):
   the actors managed by a particular scheduler.
   '''
 
-  def __init__(self, actor, mailbox, scheduler, urn):
+  def __init__(self, actor, mailbox, scheduler):
     super(ActorProcessor, self).__init__()
     self._logger = logging.getLogger(object_fqn(self))
     self._actor = actor
     self._mailbox = mailbox
     self._scheduler = scheduler
     self._state = None
-    self._urn = urn
     # Run-time statistics.
     self._slice_msg_count = 0
     self._slice_penalty = 0
     self._slice_run_time = 0
     self._total_msg_count = 0
     self._total_run_time = 0
-
-  @property
-  def adjusted_priority(self):
-    return self._adj_priority
 
   def execute(self):
     '''
@@ -144,7 +139,3 @@ class ActorProcessor(object):
   @property
   def total_run_time(self):
     return self._total_run_time
-
-  @property
-  def urn(self):
-    return self._urn

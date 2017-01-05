@@ -18,6 +18,7 @@
 # Thomas Quintana <quintana.thomas@gmail.com>
 
 from multiprocessing import cpu_count, Pipe, Process
+from uuid import uuid4
 
 from jobber.constants import JOBBER_PORT, LOCAL_HOST
 from jobber.core.actor_scheduler import ActorScheduler
@@ -86,6 +87,10 @@ class ActorSystem(object):
     pass
 
   def find_global(self, fqn):
+    '''
+    Returns an actor proxy that will facilitate communications between a local
+    and remote actor.
+    '''
     pass
 
   def find_local(self, fqn):

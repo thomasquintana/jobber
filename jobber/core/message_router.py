@@ -17,10 +17,26 @@
 #
 # Thomas Quintana <quintana.thomas@gmail.com>
 
-import socket, thread
+import socket
+import threading
 
 from jobber.core.actor import Actor
 from jobber.core.messages.datagram import Datagram
+
+class SocketReader(threading.Thread):
+  def __init__(self, router, sock):
+    super(SocketReader, self).__init__()
+    self._running = True
+    self._router = router
+    self._socket = sock
+
+  def run(self):
+    while self._running:
+      data, _ = self._socket.recvfrom(1024)
+      # TODO: Deserialize the message and add to router mailbox.
+
+  def shutdown(self):
+    self._running = False
 
 class MessageRouter(Actor):
   def __init__(self, name, ip, port, local_conns, gateway=False):
@@ -33,6 +49,7 @@ class MessageRouter(Actor):
     self._local_gateway_idx = None
     self._gateway = gateway
     self._udp_sock = None
+    self._udp_sock_reader = None
 
   def on_datagram(self, message):
     destination = message.destination
@@ -58,6 +75,7 @@ class MessageRouter(Actor):
           gateway = self._local_conns[gateway_idx]
           gateway.send(message)
       else:
+        # TODO: Serialize the message.
         # Send the message to another host or actor system via UDP.
         self._udp_sock.sendto(message, (self._local_ip, self._local_port))
 
@@ -80,10 +98,12 @@ class MessageRouter(Actor):
     if self._gateway:
       self._udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
       self._udp_sock.bind((self._local_ip, self._local_port))
+      self._udp_sock_reader = SocketReader(self, self._udp_sock)
 
   def on_stop(self):
     if self._gateway:
       self._udp_sock.close()
+      self._udp_sock_reader.shutdown()
 
   def receive(self, message):
     '''
