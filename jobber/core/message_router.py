@@ -91,6 +91,7 @@ class MessageRouter(Actor):
       self._udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
       self._udp_sock.bind((self._local_ip, self._local_port))
       self._udp_sock_reader = SocketReader(self.actor_ref, self._udp_sock)
+      self._udp_sock_reader.start()
 
   def on_stop(self):
     if self._gateway:
@@ -105,6 +106,22 @@ class MessageRouter(Actor):
     if isinstance(message, Datagram):
       self.on_datagram(message)
 
+class ConnectionReader(threading.Thread):
+  def __init__(self, router, connections):
+    super(ConnectionReader, self).__init__()
+    self._running = True
+    self._router = router
+    self._connections = connections
+
+  def run(self):
+    while self._running:
+      for connection in self._connections:
+        if connection.poll():
+          self._router.tell(connection.recv())
+
+  def shutdown(self):
+    self._running = False
+
 class SocketReader(threading.Thread):
   def __init__(self, router, sock):
     super(SocketReader, self).__init__()
@@ -114,7 +131,7 @@ class SocketReader(threading.Thread):
 
   def run(self):
     while self._running:
-      self._router.tell(pickle.loads(self._socket.recvfrom(65535)[0]))
+      self._router.tell(pickle.loads(self._socket.recvfrom(65507)[0]))
 
   def shutdown(self):
     self._running = False
