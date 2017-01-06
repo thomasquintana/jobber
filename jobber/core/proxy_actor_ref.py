@@ -28,7 +28,7 @@ class ProxyActorRef(object):
   uuid      -- A universally unique identifier for the referenced actor.
   '''
 
-  def __init__(self, mailbox, url, uuid):
+  def __init__(self, mailbox, url, uuid, router):
     super(ProxyActorRef, self).__init__()
     self._url = url
     self._urn = uuid
