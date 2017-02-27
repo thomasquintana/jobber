@@ -66,7 +66,6 @@ class ActorSchedulerTests(TestCase):
       processor = ActorProcessor(actors[idx], mailboxes[idx], self._scheduler)
       processor.start()
       processors.append(processor)
-    time.sleep(2)
     self._scheduler.shutdown_now()
     self._thread.join()
     for actor in actors:
