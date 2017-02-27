@@ -26,9 +26,10 @@ class ActorRef(object):
   uuid      -- A universally unique identifier for the referenced actor.
   '''
 
-  def __init__(self, mailbox, url, uuid):
+  def __init__(self, mailbox, scheduler, url, uuid):
     super(ActorRef, self).__init__()
     self._mailbox = mailbox
+    self._scheduler = scheduler
     self._url = url
     self._urn = uuid
 
@@ -38,6 +39,7 @@ class ActorRef(object):
 
   def tell(self, message):
     self._mailbox.append(message)
+    self._scheduler.notify()
 
   @property
   def urn(self):

@@ -1,1 +1,4 @@
-sortedcontainers==1.5.3
+future==0.16.0
+mock==2.0.0
+six==1.10.0
+sortedcontainers==1.5.7

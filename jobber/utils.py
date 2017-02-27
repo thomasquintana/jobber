@@ -73,3 +73,13 @@ def time_delta_ms(start_time, end_time):
   '''
 
   return int((end_time - start_time) * 1e3)
+
+def time_to_ms(time):
+  '''
+  Convert the output of time.time to milliseconds.
+
+  Positional arguments:
+  time -- the input time.
+  '''
+
+  return int(time * 1e3)

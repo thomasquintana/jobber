@@ -19,7 +19,7 @@
 
 import socket
 
-class ProxyActorRef(object):
+class LocalProxyActorRef(object):
   '''
   
   Positional Arguments:
@@ -28,8 +28,33 @@ class ProxyActorRef(object):
   uuid      -- A universally unique identifier for the referenced actor.
   '''
 
-  def __init__(self, mailbox, url, uuid, router):
-    super(ProxyActorRef, self).__init__()
+  def __init__(self, mailbox, router, url, uuid):
+    super(LocalProxyActorRef, self).__init__()
+    self._url = url
+    self._urn = uuid
+
+  @property
+  def url(self):
+    return self._url
+
+  def tell(self, message):
+    pass
+
+  @property
+  def urn(self):
+    return self._urn
+
+class RemoteProxyActorRef(object):
+  '''
+  
+  Positional Arguments:
+  mailbox   -- A reference to the referenced actor's mailbox.
+  url       -- A valid url to the referenced actor.
+  uuid      -- A universally unique identifier for the referenced actor.
+  '''
+
+  def __init__(self, mailbox, router, url, uuid):
+    super(RemoteProxyActorRef, self).__init__()
     self._url = url
     self._urn = uuid
 
