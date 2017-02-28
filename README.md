@@ -16,20 +16,20 @@ Jobber is a multi-core, distributed, actor framework for Python.
 
 0. Install requirements using pip
 
-`pip install -r requirements.txt`
+..`$ pip install -r requirements.txt`
 
 1. Add jobber to your PYTHONPATH
 
-`export PYTHONPATH=/path/to/jobber:$PYTHONPATH`
+..`$ export PYTHONPATH=/path/to/jobber:$PYTHONPATH`
 
 2. Install nosetests
 
-`sudo easy_install nosetests`
+..`$ sudo easy_install nosetests`
 
 3. Run tests
 
-* Navigate to /path/to/jobber
+..* Navigate to /path/to/jobber
 
-* `nosetests`
+..* `$ nosetests`
 
 4. Enjoy Jobber!
