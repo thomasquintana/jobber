@@ -20,25 +20,25 @@
 import time
 
 class Datagram(object):
-  def __init__(self, source, destination, message):
-    super(Datagram, self).__init__()
-    self._source = source
-    self._destination = destination
-    self._message = message
-    self._timestamp = time.time()
+    def __init__(self, source, destination, message):
+        super(Datagram, self).__init__()
+        self._source = source
+        self._destination = destination
+        self._message = message
+        self._timestamp = time.time()
 
-  @property
-  def source(self):
-    return self._source
+    @property
+    def source(self):
+        return self._source
 
-  @property
-  def destination(self):
-    return self._destination
+    @property
+    def destination(self):
+        return self._destination
 
-  @property
-  def message(self):
-    return self._message
+    @property
+    def message(self):
+        return self._message
 
-  @property
-  def timestamp(self):
-    return self._timestamp
+    @property
+    def timestamp(self):
+        return self._timestamp

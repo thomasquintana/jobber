@@ -18,5 +18,5 @@
 # Thomas Quintana <quintana.thomas@gmail.com>
 
 class ActorRegistry(object):
-  def __init__(self):
-    super(ActorRegistry, self).__init__()
+    def __init__(self):
+        super(ActorRegistry, self).__init__()

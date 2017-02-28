@@ -18,34 +18,33 @@
 # Thomas Quintana <quintana.thomas@gmail.com>
 
 class Actor(object):
-  '''
-  An actor is the most basic unit of computation in an actor framework.
-  '''
+    """
+    An actor is the most basic unit of computation in an actor framework.
+    """
 
-  def __init__(self):
-    super(Actor, self).__init__()
-    self._actor_ref = None
-    self._actor_system = None
+    def __init__(self):
+        super(Actor, self).__init__()
+        self._actor_ref = None
+        self._actor_system = None
 
-  @property
-  def actor_ref(self):
-    return self._actor_ref
+    @property
+    def actor_ref(self):
+        return self._actor_ref
 
-  @actor_ref.setter
-  def actor_ref(self, actor_ref):
-    self._actor_ref = actor_ref
+    @actor_ref.setter
+    def actor_ref(self, actor_ref):
+        self._actor_ref = actor_ref
 
-  @property
-  def actor_system(self):
-    return self._actor_system
+    @property
+    def actor_system(self):
+        return self._actor_system
 
-  @actor_system.setter
-  def actor_system(self, actor_system):
-    self._actor_system = actor_system
+    @actor_system.setter
+    def actor_system(self, actor_system):
+        self._actor_system = actor_system
 
-  def receive(self, message):
-    '''
-    This method processes incoming messages.
-    '''
-
-    pass
+    def receive(self, message):
+        """
+        This method processes incoming messages.
+        """
+        pass
