@@ -44,62 +44,46 @@ class ActorProcessor(object):
         self._scheduler = scheduler
         self._state = None
 
-    def execute(self):
-        """
-        This method will be scheduled for execution by the scheduler.
-        """
-
-        while True:
-            if len(self._mailbox) == 0:
-                self._state = ACTOR_PROCESSOR_IDLE
-                break
-
-            self._state = ACTOR_PROCESSOR_RUNNING
-            message = self._mailbox.pop(0)
-            if isinstance(message, PoisonPill):
-                self.stop()
-                break
-            try:
-                self._actor.receive(message)
-            except Exception as exception:
-                self._logger.exception(exception)
-
-            # Try to yield the process to the scheduler so it can run other tasks.
-            # If the scheduler raises an InterruptException we break out of our
-            # loop otherwise we continue processing messages.
-            try:
-                self._scheduler.interrupt()
-            except InterruptException:
-                if len(self._mailbox) > 0:
-                    self._state = ACTOR_PROCESSOR_READY
-                else:
-                    self._state = ACTOR_PROCESSOR_IDLE
-                break
-
     @property
-    def pending_msg_count(self):
+    def pending_message_count(self):
         return len(self._mailbox)
-
-    def start(self):
-        if hasattr(self._actor, "on_start"):
-            if callable(self._actor.on_start):
-                self._actor.on_start()
-
-        self._state = ACTOR_PROCESSOR_IDLE
-        self._scheduler.schedule(self)
 
     @property
     def state(self):
         return self._state
 
+    def execute(self):
+        """
+        Passes a message to the actor for execution
+        """
+        pass
+
+    def start(self):
+        try:
+            self._actor.on_start()
+        except AttributeError:
+            # actor has no attribute on_start
+            pass
+        except TypeError:
+            # on_start is not callable
+            pass
+
+        self._state = ACTOR_PROCESSOR_IDLE
+        self._scheduler.schedule(self)
+
     def stop(self):
         self._state = ACTOR_PROCESSOR_COMPLETED
-        if hasattr(self._actor, "on_stop"):
-            if callable(self._actor.on_stop):
-                self._actor.on_stop()
+        try:
+            self._actor.on_stop()
+        except AttributeError:
+            # actor has no attribute on_stop
+            pass
+        except TypeError:
+            # on_stop is not callable
+            pass
 
     def stop_gracefully(self):
         self._mailbox.append(PoisonPill())
 
-    def _receive_message(message):
+    def _receive_message(self, message):
         self._mailbox.append(message)

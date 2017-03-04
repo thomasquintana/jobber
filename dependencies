@@ -10,6 +10,7 @@ ACTOR PROCESSOR:
 has references to:
 - actor
 - mailbox
+- actor scheduler (not a fan)
 
 ACTOR REF:
 has references to:

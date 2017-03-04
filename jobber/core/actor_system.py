@@ -21,7 +21,7 @@ from multiprocessing import cpu_count, Pipe, Process
 from uuid import uuid4
 
 from jobber.constants import JOBBER_PORT, LOCAL_HOST
-from jobber.core.actor_scheduler import ActorScheduler
+from jobber.core.scheduler.actor_scheduler import ActorScheduler
 from jobber.core.message_router import MessageRouter
 from jobber.errors import (ACTOR_REF_INVALID_PATH, ACTOR_REF_INVALID_SCHEME,
         ACTOR_SYSTEM_INVALID_PROC_COUNT)

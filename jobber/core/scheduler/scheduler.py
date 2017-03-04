@@ -14,11 +14,11 @@ from jobber.utils import object_fully_qualified_name
 
 class Scheduler(object):
     """
-    Scheduler Interface
+    Minimal Scheduler Interface
     """
 
-    def __init__(self, slice_msgs):
-        super(ActorScheduler, self).__init__()
+    def __init__(self):
+        super(Scheduler, self).__init__()
         self._logger = logging.getLogger(object_fully_qualified_name(self))
         self._state = ACTOR_SCHEDULER_STOPPED
         self._processors = list()
@@ -29,22 +29,23 @@ class Scheduler(object):
         """
         pass
 
-    def schedule(self, actor_proc):
-        if self._state == ACTOR_SCHEDULER_RUNNING:
-            self._procs.add((0., actor_proc))
-            self._barrier.set()
-        else:
-            raise SchedulerStoppedException
+    def schedule(self, actor_processor):
+        """
+        Schedules an Actor Processor for Message Processing
+        """
+        pass
 
     def shutdown(self):
         if self._state == ACTOR_SCHEDULER_RUNNING:
-            for _, proc in self._procs:
-                proc.stop_gracefully()
+            for processor in self._processors:
+                processor.stop_gracefully()
 
             self._state = ACTOR_SCHEDULER_STOPPING
 
     def shutdown_now(self):
         self._state = ACTOR_SCHEDULER_STOPPED
+        for processor in self._processors:
+            processor.stop()
 
     def start(self):
         if self._state == ACTOR_SCHEDULER_STOPPED:
