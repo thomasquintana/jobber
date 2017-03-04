@@ -29,16 +29,17 @@ except ImportError:
 from jobber.constants import (ACTOR_PROCESSOR_COMPLETED, ACTOR_PROCESSOR_IDLE,
         ACTOR_PROCESSOR_READY, ACTOR_PROCESSOR_RUNNING)
 
-from jobber.core.actor import Actor
-from jobber.core.actor_processor import ActorProcessor
-from jobber.core.actor_scheduler import ActorScheduler
+from jobber.core.actor.actor import Actor
+from jobber.core.actor.actor_processor import ActorProcessor
+from jobber.core.scheduler.actor_scheduler import ActorScheduler
 from jobber.core.exceptions.interrupt_exception import InterruptException
 from jobber.core.messages.poison_pill import PoisonPill
+from jobber.core.actor.mailbox import Mailbox
 
 class ActorProcessorTests(TestCase):
     def setUp(self):
         self._actor = Actor()
-        self._mailbox = list()
+        self._mailbox = Mailbox()
         self._scheduler = create_autospec(ActorScheduler)
         self._processor = ActorProcessor(self._actor, self._mailbox, self._scheduler)
 
@@ -56,7 +57,7 @@ class ActorProcessorTests(TestCase):
         self._mailbox.append('jobber')
         self._processor.execute()
         self._actor.receive.assert_called_once()
-        self.assertTrue(self._processor.pending_msg_count == 0)
+        self.assertTrue(self._processor.pending_message_count == 0)
         self._processor.stop()
 
     def test_actor_processor_empty_mailbox(self):
@@ -73,7 +74,7 @@ class ActorProcessorTests(TestCase):
         self._mailbox.append('jobber')
         self._processor.execute()
         self._scheduler.interrupt.assert_called_once()
-        self.assertTrue(self._processor.pending_msg_count == 0)
+        self.assertTrue(self._processor.pending_message_count == 0)
         self.assertTrue(self._processor.state == ACTOR_PROCESSOR_IDLE)
         self._processor.stop()
         self.assertTrue(self._processor.state == ACTOR_PROCESSOR_COMPLETED)
@@ -85,7 +86,7 @@ class ActorProcessorTests(TestCase):
         self._scheduler.interrupt.side_effect = InterruptException()
         self._processor.execute()
         self._scheduler.interrupt.assert_called_once()
-        self.assertTrue(self._processor.pending_msg_count == 0)
+        self.assertTrue(self._processor.pending_message_count == 0)
         self.assertTrue(self._processor.state == ACTOR_PROCESSOR_IDLE)
         self._processor.stop()
         self.assertTrue(self._processor.state == ACTOR_PROCESSOR_COMPLETED)
@@ -98,7 +99,7 @@ class ActorProcessorTests(TestCase):
         self._scheduler.interrupt.side_effect = InterruptException()
         self._processor.execute()
         self._scheduler.interrupt.assert_called_once()
-        self.assertTrue(self._processor.pending_msg_count == 1)
+        self.assertTrue(self._processor.pending_message_count == 1)
         self.assertTrue(self._processor.state == ACTOR_PROCESSOR_READY)
         self._processor.stop()
         self.assertTrue(self._processor.state == ACTOR_PROCESSOR_COMPLETED)

@@ -28,7 +28,7 @@ from jobber.core.exceptions.interrupt_exception import InterruptException
 from jobber.constants import (ACTOR_PROCESSOR_COMPLETED, ACTOR_SCHEDULER_RUNNING,
         ACTOR_SCHEDULER_STOPPED, ACTOR_SCHEDULER_STOPPING)
 
-from jobber.utils import object_fqn
+from jobber.utils import object_fully_qualified_name
 
 class ActorScheduler(object):
     """
@@ -37,7 +37,7 @@ class ActorScheduler(object):
 
     def __init__(self, slice_msgs):
         super(ActorScheduler, self).__init__()
-        self._logger = logging.getLogger(object_fqn(self))
+        self._logger = logging.getLogger(object_fully_qualified_name(self))
         self._barrier = Event()
         self._processed_msgs = 0
         # Processes are stored as two-tuples (run-time, proc)
