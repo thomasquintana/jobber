@@ -21,79 +21,80 @@ import logging
 
 from jobber.core.exceptions.interrupt_exception import InterruptException
 from jobber.core.messages.poison_pill import PoisonPill
-from jobber.constants import ACTOR_PROCESSOR_COMPLETED, ACTOR_PROCESSOR_IDLE, \
-                             ACTOR_PROCESSOR_READY, ACTOR_PROCESSOR_RUNNING
+from jobber.constants import (ACTOR_PROCESSOR_COMPLETED, ACTOR_PROCESSOR_IDLE,
+        ACTOR_PROCESSOR_READY, ACTOR_PROCESSOR_RUNNING)
+
 from jobber.utils import object_fqn
 
 class ActorProcessor(object):
-  '''
-  An actor processor is responsible for mapping individual actors to
-  processes that can run the actor. The actor processor works in conjunction
-  with the scheduler to provide fair resource distribution between all
-  the actors managed by a particular scheduler.
-  '''
+    """
+    An actor processor is responsible for mapping individual actors to
+    processes that can run the actor. The actor processor works in conjunction
+    with the scheduler to provide fair resource distribution between all
+    the actors managed by a particular scheduler.
+    """
 
-  poison_pill = PoisonPill()
+    def __init__(self, actor, mailbox, scheduler):
+        super(ActorProcessor, self).__init__()
+        self._logger = logging.getLogger(object_fqn(self))
+        self._actor = actor
+        self._mailbox = mailbox
+        self._scheduler = scheduler
+        self._state = None
 
-  def __init__(self, actor, mailbox, scheduler):
-    super(ActorProcessor, self).__init__()
-    self._logger = logging.getLogger(object_fqn(self))
-    self._actor = actor
-    self._mailbox = mailbox
-    self._scheduler = scheduler
-    self._state = None
+    def execute(self):
+        """
+        This method will be scheduled for execution by the scheduler.
+        """
 
-  def execute(self):
-    '''
-    This method will be scheduled for execution by the scheduler..
-    '''
+        while True:
+            if len(self._mailbox) == 0:
+                self._state = ACTOR_PROCESSOR_IDLE
+                break
 
-    while True:
-      if len(self._mailbox) == 0:
+            self._state = ACTOR_PROCESSOR_RUNNING
+            message = self._mailbox.pop(0)
+            if isinstance(message, PoisonPill):
+                self.stop()
+                break
+            try:
+                self._actor.receive(message)
+            except Exception as exception:
+                self._logger.exception(exception)
+
+            # Try to yield the process to the scheduler so it can run other tasks.
+            # If the scheduler raises an InterruptException we break out of our
+            # loop otherwise we continue processing messages.
+            try:
+                self._scheduler.interrupt()
+            except InterruptException:
+                if len(self._mailbox) > 0:
+                    self._state = ACTOR_PROCESSOR_READY
+                else:
+                    self._state = ACTOR_PROCESSOR_IDLE
+                break
+
+    @property
+    def pending_msg_count(self):
+        return len(self._mailbox)
+
+    def start(self):
+        if hasattr(self._actor, "on_start"):
+            if callable(self._actor.on_start):
+                self._actor.on_start()
+
         self._state = ACTOR_PROCESSOR_IDLE
-        break
-      else:
-        self._state = ACTOR_PROCESSOR_RUNNING
-        message = self._mailbox.pop(0)
-        if isinstance(message, PoisonPill):
-          self.stop()
-          break
-        try:
-          self._actor.receive(message)
-        except Exception as exception:
-          self._logger.exception(exception)
-        # Try to yield the process to the scheduler so it can run other tasks.
-        # If the scheduler raises an InterruptException we break out of our
-        # loop otherwise we continue processing messages.
-        try:
-          self._scheduler.interrupt()
-        except InterruptException:
-          if len(self._mailbox) > 0:
-            self._state = ACTOR_PROCESSOR_READY
-          else:
-            self._state = ACTOR_PROCESSOR_IDLE
-          break
+        self._scheduler.schedule(self)
 
-  @property
-  def pending_msg_count(self):
-    return len(self._mailbox)
+    @property
+    def state(self):
+        return self._state
 
-  def start(self):
-    if hasattr(self._actor, "on_start"):
-      if callable(self._actor.on_start):
-        self._actor.on_start()
-    self._state = ACTOR_PROCESSOR_IDLE
-    self._scheduler.schedule(self)
+    def stop(self):
+        self._state = ACTOR_PROCESSOR_COMPLETED
+        if hasattr(self._actor, "on_stop"):
+            if callable(self._actor.on_stop):
+                self._actor.on_stop()
 
-  @property
-  def state(self):
-    return self._state
-
-  def stop(self):
-    self._state = ACTOR_PROCESSOR_COMPLETED
-    if hasattr(self._actor, "on_stop"):
-      if callable(self._actor.on_stop):
-        self._actor.on_stop()
-
-  def stop_gracefully(self):
-    self._mailbox.append(ActorProcessor.poison_pill)
+    def stop_gracefully(self):
+        self._mailbox.append(PoisonPill())

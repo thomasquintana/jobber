@@ -17,69 +17,71 @@
 #
 # Thomas Quintana <quintana.thomas@gmail.com>
 
-from jobber.constants import MS_DAY, MS_HOUR, \
-                             MS_MINUTE, MS_SECOND, MS_WEEK
+from jobber.constants import MS_WEEK, MS_DAY, MS_HOUR, MS_MINUTE, MS_SECOND
 
 def format_ms(ms):
-  '''
-  Returns a formatted string for a period of time in milliseconds.
+    """
+    Returns a formatted string for a period of time in milliseconds.
 
-  Positional Arguments:
-  period -- the period of time in milliseconds to be formatted.
-  '''
+    Positional Arguments:
+    period -- the period of time in milliseconds to be formatted.
+    """
 
-  result = ""
-  temp = None
-  if ms >= MS_WEEK:
-    temp = ms / MS_WEEK
-    result += "%i weeks " % temp
-    ms -= temp * MS_WEEK
-  if ms >= MS_DAY:
-    temp = ms / MS_DAY
-    result += "%i days " % temp
-    ms -= temp * MS_DAY
-  if ms >= MS_HOUR:
-    temp = ms / MS_HOUR
-    result += "%i hours " % temp
-    ms -= temp * MS_HOUR
-  if ms >= MS_MINUTE:
-    temp = ms / MS_MINUTE
-    result += "%i minutes " % temp
-    ms -= temp * MS_MINUTE
-  if ms >= MS_SECOND:
-    temp = ms / MS_SECOND
-    result += "%i seconds " % temp
-    ms -= temp * MS_SECOND
-  result += "%i milliseconds" % ms
-  return result
+    result = ''
+    if ms >= MS_WEEK:
+        result += '{} week(s) '.format(ms / MS_WEEL)
+        ms = ms % MS_WEEK
+
+    if ms >= MS_DAY:
+        result += '{} day(s) '.format(ms / MS_DAY)
+        ms = ms % MS_DAY
+
+    if ms >= MS_HOUR:
+        result += '{} hour(s) '.format(ms / MS_HOUR)
+        ms = ms % MS_HOUR
+
+    if ms >= MS_MINUTE:
+        result += '{} minute(s) '.format(ms / MS_MINUTE)
+        ms = ms % MS_MINUTE
+
+    if ms >= MS_SECOND:
+        result += '{} second(s) '.format(ms / MS_SECOND)
+        ms = ms % MS_SECOND
+
+    if ms > 0:
+        result += '{} millisecond(s)'.format(ms)
+    else:
+        result = result[:-1]
+        
+    return result
 
 def object_fqn(o):
-  '''
-  Return the fully qualified name of an object.
+    """
+    Return the fully qualified name of an object.
 
-  Positional arguments:
-  o -- the object.
-  '''
+    Positional arguments:
+    o -- the object.
+    """
 
-  return "%s.%s" % (o.__class__.__module__, o.__class__.__name__)
+    return "{}.{}".format(o.__class__.__module__, o.__class__.__name__)
 
 def time_delta_ms(start_time, end_time):
-  '''
-  Returns a time delta between a start time and end time in milliseconds.
-  
-  Positional arguments:
-  start_time -- the start time.
-  end_time   -- the end time.
-  '''
+    """
+    Returns a time delta between a start time and end time in milliseconds.
 
-  return int((end_time - start_time) * 1e3)
+    Positional arguments:
+    start_time -- the start time.
+    end_time   -- the end time.
+    """
+
+    return int((end_time - start_time) * MS_SECOND)
 
 def time_to_ms(time):
-  '''
-  Convert the output of time.time to milliseconds.
+    """
+    Convert the output of time.time to milliseconds.
 
-  Positional arguments:
-  time -- the input time.
-  '''
+    Positional arguments:
+    time -- the input time.
+    """
 
-  return int(time * 1e3)
+    return int(time * MS_SECOND)

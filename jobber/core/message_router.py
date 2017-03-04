@@ -18,9 +18,10 @@
 # Thomas Quintana <quintana.thomas@gmail.com>
 
 try:
-   import cPickle as pickle
+    import cPickle as pickle
 except:
-   import pickle
+    import pickle
+
 import socket
 import threading
 
@@ -28,110 +29,113 @@ from jobber.core.actor import Actor
 from jobber.core.messages.datagram import Datagram
 
 class MessageRouter(Actor):
-  def __init__(self, name, ip, port, local_conns, gateway=False):
-    super(MessageRouter, self).__init__()
-    self._gateway = gateway
-    self._local_name = name
-    self._local_ip = ip
-    self._local_port = port
-    self._local_conns = local_conns
-    self._local_conns_lookup = None
-    self._local_gateway_idx = None
-    self._messages_rx = 0
-    self._messages_tx = 0
-    self._udp_sock = None
-    self._udp_sock_reader = None
+    def __init__(self, name, ip, port, local_conns, gateway=False):
+        super(MessageRouter, self).__init__()
+        self._gateway = gateway
+        self._local_name = name
+        self._local_ip = ip
+        self._local_port = port
+        self._local_conns = local_conns
+        self._local_conns_lookup = None
+        self._local_gateway_idx = None
+        self._messages_rx = 0
+        self._messages_tx = 0
+        self._udp_sock = None
+        self._udp_sock_reader = None
 
-  def on_datagram(self, message):
-    destination = message.destination
-    if destination.hostname == self._local_ip and \
-       destination.port == self._local_port:
-      # Handle messages destined for our host.
-      tokens = destination.path[1:].split("/")
-      if tokens[0] == self._local_name:
-        # Handle messages destined for our process.
-        actor_ref = self.actor_system.find_local(".".join(tokens[1:-1]))
-        if actor_ref is not None:
-          actor_ref.tell(message)
-      else:
-        # Handle messages destined for a different process.
-        conn = self._local_conns[self._local_conns_lookup[tokens[0]]]
-        conn.send(message)
-    else:
-      # Handle messages destined for other hosts.
-      if not self._gateway:
-        # Use a gateway.
-        gateway_idx = self._local_gateway_idx
-        if gateway_idx is not None:
-          gateway = self._local_conns[gateway_idx]
-          gateway.send(message)
-      else:
-        # Send the message to another host or actor system via UDP.
-        self._udp_sock.sendto(
-          pickle.dumps(message), (self._local_ip, self._local_port)
-        )
+    def on_datagram(self, message):
+        destination = message.destination
+        if destination.hostname == self._local_ip and destination.port == self._local_port:
+            # Handle messages destined for our host.
+            tokens = destination.path[1:].split("/")
 
-  def on_start(self):
-    # Bootstrap the local connections.
-    conns = self._local_conns
-    if conns is not None and len(conns) > 0:
-      # Broadcast our identity to the other processes.
-      for connection in conns:
-        connection.send((self._local_name, self._gateway))
-      # Create a lookup table to the other processes.
-      lookup_table = dict()
-      for idx, connection in enumerate(conns):
-        name, gateway = connection.recv()
-        lookup_table.update({name: idx})
-        if gateway:
-          self._local_gateway_idx = idx
-      self._local_conns_lookup = lookup_table
-    # Setup the public interface.
-    if self._gateway:
-      self._udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-      self._udp_sock.bind((self._local_ip, self._local_port))
-      self._udp_sock_reader = SocketReader(self.actor_ref, self._udp_sock)
-      self._udp_sock_reader.start()
+            if tokens[0] == self._local_name:
+                # Handle messages destined for our process.
+                actor_ref = self.actor_system.find_local(".".join(tokens[1:-1]))
+                if actor_ref is not None:
+                    actor_ref.tell(message)
 
-  def on_stop(self):
-    if self._gateway:
-      self._udp_sock.close()
-      self._udp_sock_reader.shutdown()
+            else:
+                # Handle messages destined for a different process.
+                conn = self._local_conns[self._local_conns_lookup[tokens[0]]]
+                conn.send(message)
 
-  def receive(self, message):
-    '''
-    This method processes incoming messages.
-    '''
+        else:
+            # Handle messages destined for other hosts.
+            if not self._gateway:
+                # Use a gateway.
+                gateway_idx = self._local_gateway_idx
+                if gateway_idx is not None:
+                    gateway = self._local_conns[gateway_idx]
+                    gateway.send(message)
 
-    if isinstance(message, Datagram):
-      self.on_datagram(message)
+            else:
+                # Send the message to another host or actor system via UDP.
+                self._udp_sock.sendto(pickle.dumps(message), (self._local_ip, self._local_port))
+
+    def on_start(self):
+        # Bootstrap the local connections.
+        conns = self._local_conns
+        if conns is not None and len(conns) > 0:
+            # Broadcast our identity to the other processes.
+            for connection in conns:
+                connection.send((self._local_name, self._gateway))
+
+            # Create a lookup table to the other processes.
+            lookup_table = dict()
+            for idx, connection in enumerate(conns):
+                name, gateway = connection.recv()
+                lookup_table.update({name: idx})
+                if gateway:
+                    self._local_gateway_idx = idx
+
+            self._local_conns_lookup = lookup_table
+
+        # Setup the public interface.
+        if self._gateway:
+            self._udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self._udp_sock.bind((self._local_ip, self._local_port))
+            self._udp_sock_reader = SocketReader(self.actor_ref, self._udp_sock)
+            self._udp_sock_reader.start()
+
+    def on_stop(self):
+        if self._gateway:
+            self._udp_sock.close()
+            self._udp_sock_reader.shutdown()
+
+    def receive(self, message):
+        """
+        This method processes incoming messages.
+        """
+        if isinstance(message, Datagram):
+            self.on_datagram(message)
 
 class ConnectionReader(threading.Thread):
-  def __init__(self, router, connections):
-    super(ConnectionReader, self).__init__()
-    self._running = True
-    self._router = router
-    self._connections = connections
+    def __init__(self, router, connections):
+        super(ConnectionReader, self).__init__()
+        self._running = True
+        self._router = router
+        self._connections = connections
 
-  def run(self):
-    while self._running:
-      for connection in self._connections:
-        if connection.poll():
-          self._router.tell(connection.recv())
+    def run(self):
+        while self._running:
+            for connection in self._connections:
+                if connection.poll():
+                    self._router.tell(connection.recv())
 
-  def shutdown(self):
-    self._running = False
+    def shutdown(self):
+        self._running = False
 
 class SocketReader(threading.Thread):
-  def __init__(self, router, sock):
-    super(SocketReader, self).__init__()
-    self._running = True
-    self._router = router
-    self._socket = sock
+    def __init__(self, router, sock):
+        super(SocketReader, self).__init__()
+        self._running = True
+        self._router = router
+        self._socket = sock
 
-  def run(self):
-    while self._running:
-      self._router.tell(pickle.loads(self._socket.recvfrom(65507)[0]))
+    def run(self):
+        while self._running:
+            self._router.tell(pickle.loads(self._socket.recvfrom(65507)[0]))
 
-  def shutdown(self):
-    self._running = False
+    def shutdown(self):
+        self._running = False

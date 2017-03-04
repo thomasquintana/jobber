@@ -18,29 +18,28 @@
 # Thomas Quintana <quintana.thomas@gmail.com>
 
 class ActorRef(object):
-  '''
-  
-  Positional Arguments:
-  mailbox   -- A reference to the referenced actor's mailbox.
-  url       -- A valid url to the referenced actor.
-  uuid      -- A universally unique identifier for the referenced actor.
-  '''
+    """
+    Positional Arguments:
+    mailbox   -- A reference to the referenced actor's mailbox.
+    url       -- A valid url to the referenced actor.
+    uuid      -- A universally unique identifier for the referenced actor.
+    """
 
-  def __init__(self, mailbox, scheduler, url, uuid):
-    super(ActorRef, self).__init__()
-    self._mailbox = mailbox
-    self._scheduler = scheduler
-    self._url = url
-    self._urn = uuid
+    def __init__(self, mailbox, scheduler, url, uuid):
+        super(ActorRef, self).__init__()
+        self._mailbox = mailbox
+        self._scheduler = scheduler
+        self._url = url
+        self._urn = uuid
 
-  @property
-  def url(self):
-    return self._url
+    @property
+    def url(self):
+        return self._url
 
-  def tell(self, message):
-    self._mailbox.append(message)
-    self._scheduler.notify()
+    def tell(self, message):
+        self._mailbox.append(message)
+        self._scheduler.notify()
 
-  @property
-  def urn(self):
-    return self._urn
+    @property
+    def urn(self):
+        return self._urn

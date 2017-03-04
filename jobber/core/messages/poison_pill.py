@@ -18,5 +18,5 @@
 # Thomas Quintana <quintana.thomas@gmail.com>
 
 class PoisonPill(object):
-  def __init__(self):
-    super(PoisonPill, self).__init__()
+    def __init__(self):
+        super(PoisonPill, self).__init__()
