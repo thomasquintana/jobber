@@ -18,4 +18,4 @@
 # Thomas Quintana <quintana.thomas@gmail.com>
 
 class InterruptException(Exception):
-  pass
+    pass

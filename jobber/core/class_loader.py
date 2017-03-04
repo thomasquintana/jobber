@@ -20,31 +20,32 @@
 import sys
 
 def safe_import(fqn, force_load=False):
-  '''
-  Import a module and return None if the module isn't found.
+    """
+    Import a module and return None if the module isn't found.
 
-  Positional arguments:
-  fqn -- the class fully qualified name.
-  
-  Keyword arguments:
-  force_load -- a flag indicating if the module should be reloaded from disk.
-  '''
+    Positional arguments:
+    fqn -- the class fully qualified name.
 
-  cache = dict()
-  # If force_load is True and the module has been previously loaded from
-  # disk, we have to reload the module.
-  if force_load and fqn in sys.modules:
-    if fqn not in sys.builtin_module_names:
-      # Remove any submodules because they won't appear in the newly loaded
-      # module's namespace if they're already in sys.modules.
-      sub_modules = [m for m in sys.modules if m.startswith('%s.' % fqn)]
-      for key in [fqn] + sub_modules:
-        # Prevent garbage collection.
-        cache[key] = sys.modules[key]
-        del sys.modules[key]
-  # Try to load the desired module.
-  separator_offset = fqn.rfind('.')
-  fqn_base = fqn[:separator_offset]
-  fqn_klass = fqn[separator_offset + 1:]
-  module = __import__(fqn_base, globals(), locals(), [fqn_klass], -1)
-  return getattr(module, fqn_klass)
+    Keyword arguments:
+    force_load -- a flag indicating if the module should be reloaded from disk.
+    """
+
+    cache = dict()
+    # If force_load is True and the module has been previously loaded from
+    # disk, we have to reload the module.
+    if force_load and fqn in sys.modules:
+        if fqn not in sys.builtin_module_names:
+            # Remove any submodules because they won't appear in the newly loaded
+            # module's namespace if they're already in sys.modules.
+            sub_modules = [m for m in sys.modules if m.startswith('%s.' % fqn)]
+            for key in [fqn] + sub_modules:
+                # Prevent garbage collection.
+                cache[key] = sys.modules[key]
+                del sys.modules[key]
+
+    # Try to load the desired module.
+    separator_offset = fqn.rfind('.')
+    fqn_base = fqn[:separator_offset]
+    fqn_klass = fqn[separator_offset + 1:]
+    module = __import__(fqn_base, globals(), locals(), [fqn_klass], -1)
+    return getattr(module, fqn_klass)

@@ -23,13 +23,15 @@ import unittest
 from builtins import range
 from threading import Thread
 from unittest import TestCase
-try:
-  from unittest.mock import create_autospec, Mock
-except ImportError:
-  from mock import create_autospec, Mock
 
-from jobber.constants import ACTOR_PROCESSOR_COMPLETED, ACTOR_PROCESSOR_IDLE, \
-                             ACTOR_PROCESSOR_READY, ACTOR_PROCESSOR_RUNNING
+try:
+    from unittest.mock import create_autospec, Mock
+except ImportError:
+    from mock import create_autospec, Mock
+
+from jobber.constants import (ACTOR_PROCESSOR_COMPLETED, ACTOR_PROCESSOR_IDLE,
+        ACTOR_PROCESSOR_READY, ACTOR_PROCESSOR_RUNNING)
+
 from jobber.core.actor import Actor
 from jobber.core.actor_processor import ActorProcessor
 from jobber.core.actor_scheduler import ActorScheduler
@@ -37,39 +39,43 @@ from jobber.core.exceptions.interrupt_exception import InterruptException
 from jobber.core.messages.poison_pill import PoisonPill
 
 class ActorSchedulerTests(TestCase):
-  def setUp(self):
-    self._scheduler = ActorScheduler(10)
-    self._thread = Thread(target=self._scheduler.start)
-    self._thread.start()
+    def setUp(self):
+        self._scheduler = ActorScheduler(10)
+        self._thread = Thread(target=self._scheduler.start)
+        self._thread.start()
 
-  def test_actor_scheduler_one_processor(self):
-    actor = Actor()
-    actor.receive = Mock(return_value=None)
-    actor.receive.side_effect = lambda message: len(message)
-    mailbox = ["jobber"] * 100
-    processor = ActorProcessor(actor, mailbox, self._scheduler)
-    processor.start()
-    self._scheduler.shutdown()
-    self._thread.join()
-    self.assertTrue(actor.receive.call_count == 100)
+    def test_actor_scheduler_one_processor(self):
+        actor = Actor()
+        actor.receive = Mock(return_value=None)
+        actor.receive.side_effect = lambda message: len(message)
 
-  def test_actor_scheduler_many_processors(self):
-    actors = list()
-    for _ in range(100):
-      actor = Actor()
-      actor.receive = Mock(return_value=None)
-      actor.receive.side_effect = lambda message: len(message)
-      actors.append(actor)
-    mailboxes = [["jobber"] * 100 for _ in range(100)]
-    processors = list()
-    for idx in range(100):
-      processor = ActorProcessor(actors[idx], mailboxes[idx], self._scheduler)
-      processor.start()
-      processors.append(processor)
-    self._scheduler.shutdown_now()
-    self._thread.join()
-    for actor in actors:
-      self.assertTrue(actor.receive.call_count == 100)
+        mailbox = ['jobber'] * 100
+        processor = ActorProcessor(actor, mailbox, self._scheduler)
+        processor.start()
+        
+        self._scheduler.shutdown()
+        self._thread.join()
+        self.assertTrue(actor.receive.call_count == 100)
+
+    def test_actor_scheduler_many_processors(self):
+        actors = list()
+        for _ in range(100):
+            actor = Actor()
+            actor.receive = Mock(return_value=None)
+            actor.receive.side_effect = lambda message: len(message)
+            actors.append(actor)
+
+        mailboxes = [['jobber'] * 100 for _ in range(100)]
+        processors = list()
+        for index in range(100):
+            processor = ActorProcessor(actors[index], mailboxes[index], self._scheduler)
+            processor.start()
+            processors.append(processor)
+
+        self._scheduler.shutdown_now()
+        self._thread.join()
+        for actor in actors:
+            self.assertTrue(actor.receive.call_count == 100)
 
 if __name__ == '__main__':
   unittest.main()
