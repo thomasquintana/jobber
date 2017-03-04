@@ -20,15 +20,14 @@
 class ActorRef(object):
     """
     Positional Arguments:
-    mailbox   -- A reference to the referenced actor's mailbox.
+    processor -- A reference to the referenced actor's processor.
     url       -- A valid url to the referenced actor.
     uuid      -- A universally unique identifier for the referenced actor.
     """
 
-    def __init__(self, mailbox, scheduler, url, uuid):
+    def __init__(self, processor, url, uuid):
         super(ActorRef, self).__init__()
-        self._mailbox = mailbox
-        self._scheduler = scheduler
+        self._processor = processor
         self._url = url
         self._urn = uuid
 
@@ -36,10 +35,9 @@ class ActorRef(object):
     def url(self):
         return self._url
 
-    def tell(self, message):
-        self._mailbox.append(message)
-        self._scheduler.notify()
-
     @property
     def urn(self):
         return self._urn
+
+    def tell(self, message):
+        self._processor._receive_message(message)

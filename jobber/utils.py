@@ -55,7 +55,7 @@ def format_ms(ms):
         
     return result
 
-def object_fqn(o):
+def object_fully_qualified_name(o):
     """
     Return the fully qualified name of an object.
 

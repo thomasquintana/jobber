@@ -10,7 +10,7 @@ from jobber.core.exceptions.scheduler_stopped_exception import SchedulerStoppedE
 from jobber.constants import (ACTOR_PROCESSOR_COMPLETED, ACTOR_SCHEDULER_RUNNING,
         ACTOR_SCHEDULER_STOPPED, ACTOR_SCHEDULER_STOPPING)
 
-from jobber.utils import object_fqn
+from jobber.utils import object_fully_qualified_name
 
 class Scheduler(object):
     """
@@ -19,7 +19,7 @@ class Scheduler(object):
 
     def __init__(self, slice_msgs):
         super(ActorScheduler, self).__init__()
-        self._logger = logging.getLogger(object_fqn(self))
+        self._logger = logging.getLogger(object_fully_qualified_name(self))
         self._state = ACTOR_SCHEDULER_STOPPED
         self._processors = list()
 
@@ -45,7 +45,6 @@ class Scheduler(object):
 
     def shutdown_now(self):
         self._state = ACTOR_SCHEDULER_STOPPED
-
 
     def start(self):
         if self._state == ACTOR_SCHEDULER_STOPPED:

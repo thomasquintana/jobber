@@ -27,7 +27,7 @@ from jobber.errors import (ACTOR_REF_INVALID_PATH, ACTOR_REF_INVALID_SCHEME,
         ACTOR_SYSTEM_INVALID_PROC_COUNT)
 
 MAX_MSGS_SLICE = 10
-MAX_TIME_SLICE = 50.0
+MAX_TIME_SLICE = 50
 
 class ActorSystem(object):
     def __init__(self, name, connections, ip, port, gateway):
@@ -72,7 +72,8 @@ class ActorSystem(object):
         actor_system.start()
         return actor_system
 
-    def create(self, fqn, visibility='local', *args, **kwargs):
+    # TODO: we are not even going to start this args kwargs thing.
+    def create(self, fully_qualified_name, visibility='local', *args, **kwargs):
         # Load object.
         # Validate that it's an actor and implements receive and receive is callable.
         # Create actor reference
@@ -87,14 +88,14 @@ class ActorSystem(object):
         # Return the actor reference.
         pass
 
-    def find_global(self, fqn):
+    def find_global(self, fully_qualified_name):
         '''
         Returns an actor proxy that will facilitate communications between a local
         and remote actor.
         '''
         pass
 
-    def find_local(self, fqn):
+    def find_local(self, fully_qualified_name):
         '''
         Returns an actor ref
         '''

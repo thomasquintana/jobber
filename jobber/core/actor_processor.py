@@ -24,7 +24,7 @@ from jobber.core.messages.poison_pill import PoisonPill
 from jobber.constants import (ACTOR_PROCESSOR_COMPLETED, ACTOR_PROCESSOR_IDLE,
         ACTOR_PROCESSOR_READY, ACTOR_PROCESSOR_RUNNING)
 
-from jobber.utils import object_fqn
+from jobber.utils import object_fully_qualified_name
 
 class ActorProcessor(object):
     """
@@ -36,8 +36,10 @@ class ActorProcessor(object):
 
     def __init__(self, actor, mailbox, scheduler):
         super(ActorProcessor, self).__init__()
-        self._logger = logging.getLogger(object_fqn(self))
+        self._logger = logging.getLogger(object_fully_qualified_name(self))
         self._actor = actor
+        self._actor.processor = self
+
         self._mailbox = mailbox
         self._scheduler = scheduler
         self._state = None
@@ -98,3 +100,6 @@ class ActorProcessor(object):
 
     def stop_gracefully(self):
         self._mailbox.append(PoisonPill())
+
+    def _receive_message(message):
+        self._mailbox.append(message)
