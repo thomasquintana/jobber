@@ -26,18 +26,19 @@ from jobber.core.message_router import MessageRouter
 from jobber.errors import (ACTOR_REF_INVALID_PATH, ACTOR_REF_INVALID_SCHEME,
         ACTOR_SYSTEM_INVALID_PROC_COUNT)
 
+MAX_MSGS_SLICE = 10
+MAX_TIME_SLICE = 50.0
+
 class ActorSystem(object):
-    def __init__(self, name, connections, max_msgs_slice, max_time_slice,
-                 ip, port, gateway):
+    def __init__(self, name, connections, ip, port, gateway):
         super(ActorSystem, self).__init__()
         self._connections = connections
         self._name = name
         self._router = MessageRouter(name, ip, port, connections, gateway=gateway)
-        self._scheduler = ActorScheduler(max_msgs_slice, max_time_slice)
+        self._scheduler = ActorScheduler(MAX_MSGS_SLICE, MAX_TIME_SLICE)
 
     @staticmethod
-    def bootstrap_system(ip=LOCAL_HOST, port=JOBBER_PORT, max_msgs_slice=10,
-                         max_time_slice=50, proc_count=cpu_count()):
+    def bootstrap_system(ip=LOCAL_HOST, port=JOBBER_PORT, proc_count=cpu_count()):
         if proc_count <= 0:
             raise ValueError(ACTOR_SYSTEM_INVALID_PROC_COUNT)
 
@@ -56,8 +57,7 @@ class ActorSystem(object):
             # Bootstrap all the child processes.
             for proc_idx in xrange(1, proc_count):
                 name = 'jobber-{}'.format(proc_idx)
-                target = ActorSystem(name, proc_conns[proc_idx], max_msgs_slice,
-                        max_time_slice, ip, port, gateway=False)
+                target = ActorSystem(name, proc_conns[proc_idx], ip, port, gateway=False)
 
                 proc = Process(name=name, target=target.start)
                 proc.start()
@@ -67,8 +67,7 @@ class ActorSystem(object):
         if proc_conns is not None:
             connections = proc_conns[0]
 
-        actor_system = ActorSystem('jobber-0', connections, max_msgs_slice,
-                max_time_slice, ip, port, gateway=True)
+        actor_system = ActorSystem('jobber-0', connections, ip, port, gateway=True)
 
         actor_system.start()
         return actor_system

@@ -1,0 +1,23 @@
+ACTOR PROCESSOR:
+has references to:
+- actor
+- mailbox
+- scheduler
+
+ACTOR REF:
+has references to:
+- mailbox
+- scheduler
+
+ACTOR SCHEDULER:
+has references to:
+- "procs" (Actor Processor)
+
+ACTOR:
+has references to:
+- actor ref
+- actor system
+
+ACTOR SYSTEM:
+has references to:
+- scheduler (is ok)
