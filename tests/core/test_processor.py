@@ -23,10 +23,10 @@ import unittest
 from jobber.constants import (ACTOR_PROCESSOR_COMPLETED, ACTOR_PROCESSOR_IDLE,
         ACTOR_PROCESSOR_READY, ACTOR_PROCESSOR_RUNNING)
 
-from jobber.core.actor.processor import ActorProcessor
+from jobber.core.actor.processor import ActorProcessor, NO_MESSAGES_RUNTIME
 from jobber.core.actor.actor import Actor
 from jobber.core.actor.mailbox import Mailbox
-from jobber.core.scheduler.scheduler import Scheduler
+from jobber.core.scheduler.runtime_dict import RuntimeDict
 
 from mock import create_autospec, Mock
 
@@ -37,8 +37,8 @@ class ProcessorTests(unittest.TestCase):
         self.mock_actor.on_stop = Mock(return_value=None)
 
         self.mock_mailbox = create_autospec(Mailbox)
-        self.mock_scheduler = create_autospec(Scheduler)
-        self.processor = ActorProcessor(self.mock_actor, self.mock_mailbox, self.mock_scheduler)
+        self.processor = ActorProcessor(self.mock_actor)
+        self.processor._mailbox = self.mock_mailbox
 
     def test_pending_message_count(self):
         self.assertTrue(self.processor.pending_message_count == 0)
@@ -53,7 +53,6 @@ class ProcessorTests(unittest.TestCase):
 
         self.assertTrue(self.processor.state == ACTOR_PROCESSOR_IDLE)
         self.mock_actor.on_start.assert_called_once()
-        self.mock_scheduler.schedule.assert_called_once()
 
     def test_stop(self):
         self.processor.stop()
@@ -68,3 +67,27 @@ class ProcessorTests(unittest.TestCase):
     def test_receive_message(self):
         self.processor._receive_message('some message')
         self.mock_mailbox.append.assert_called_once()
+
+    def test_expected_next_runtime_no_messages(self):
+        self.processor = ActorProcessor(self.mock_actor)
+        self.processor.set_message_statistics(RuntimeDict())
+        self.assertTrue(self.processor.expected_next_runtime() == NO_MESSAGES_RUNTIME)
+
+    def test_expected_next_runtime(self):
+        self.processor = ActorProcessor(self.mock_actor)
+        self.processor.set_message_statistics(RuntimeDict())
+        self.processor._mailbox.append(MockMessage())
+        self.assertTrue(self.processor.expected_next_runtime() == 0.0)
+
+        self.processor._message_statistics.update(MockMessage, 3.0)
+        self.assertTrue(self.processor.expected_next_runtime() == 3.0)
+        self.processor._message_statistics.update(MockMessage, 5.0)
+        self.assertTrue(self.processor.expected_next_runtime() == 4.0)
+        self.processor._message_statistics.update(MockOtherMessage, 2.0)
+        self.assertTrue(self.processor.expected_next_runtime() == 4.0)
+
+class MockMessage(object):
+    pass
+
+class MockOtherMessage(object):
+    pass

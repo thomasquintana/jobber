@@ -17,27 +17,29 @@
 #
 # Thomas Quintana <quintana.thomas@gmail.com>
 
-from collections import deque
+AVERAGE = 'average'
+CALLS = 'calls'
 
-class Mailbox(object):
+class RuntimeDict(object):
     """
-    Implements the Mailbox
-    Ensures FIFO
+    Efficiently stores and updates message runtimes
     """
     def __init__(self):
-        self._box = deque()
+        self._runtimes = {}
 
-    def append(self, message):
-        self._box.append(message)
+    def get(self, _type):
+        if not _type in self._runtimes:
+            self._insert(_type)
+        return self._runtimes[_type][AVERAGE]
 
-    def first(self):
-        return self._box[0]
+    def update(self, _type, runtime):
+        if not _type in self._runtimes:
+            self._insert(_type)
 
-    def pop(self):
-        return self._box.popleft()
+        record = self._runtimes[_type]
+        new_average = (record[AVERAGE]*record[CALLS] + runtime)/(record[CALLS]+1)
+        record[AVERAGE] = new_average
+        record[CALLS] += 1
 
-    def flush(self):
-        self._box.clear()
-
-    def __len__(self):
-        return len(self._box)
+    def _insert(self, _type):
+        self._runtimes[_type] = {AVERAGE: 0.0, CALLS: 0}

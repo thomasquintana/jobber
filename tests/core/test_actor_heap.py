@@ -17,27 +17,20 @@
 #
 # Thomas Quintana <quintana.thomas@gmail.com>
 
-from collections import deque
+import unittest
+from mock import create_autospec, Mock
 
-class Mailbox(object):
-    """
-    Implements the Mailbox
-    Ensures FIFO
-    """
-    def __init__(self):
-        self._box = deque()
+from jobber.core.scheduler.actor_heap import ShortestJobNextHeap
+from jobber.core.actor.processor import ActorProcessor
+from jobber.core.actor.actor import Actor
 
-    def append(self, message):
-        self._box.append(message)
+class ShortestJobNextHeapTests(unittest.TestCase):
+    def setUp(self):
+        self.heap = ShortestJobNextHeap()
+        self.actorprocessor = ActorProcessor(create_autospec(Actor))
+        self.other_actorprocessor = ActorProcessor(create_autospec(Actor))
 
-    def first(self):
-        return self._box[0]
-
-    def pop(self):
-        return self._box.popleft()
-
-    def flush(self):
-        self._box.clear()
-
-    def __len__(self):
-        return len(self._box)
+    def test_heap_insert(self):
+        self.heap.insert(self.actorprocessor)
+        self.heap.insert(self.other_actorprocessor)
+        self.assertTrue(self.heap.first() == self.actorprocessor)

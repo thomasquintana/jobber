@@ -26,6 +26,10 @@ from jobber.constants import (ACTOR_PROCESSOR_COMPLETED, ACTOR_PROCESSOR_IDLE,
 
 from jobber.utils import object_fully_qualified_name
 
+from jobber.core.actor.mailbox import Mailbox
+
+NO_MESSAGES_RUNTIME = 10e9
+
 class ActorProcessor(object):
     """
     An actor processor is responsible for mapping individual actors to
@@ -34,15 +38,16 @@ class ActorProcessor(object):
     the actors managed by a particular scheduler.
     """
 
-    def __init__(self, actor, mailbox, scheduler):
+    def __init__(self, actor):
         super(ActorProcessor, self).__init__()
         self._logger = logging.getLogger(object_fully_qualified_name(self))
         self._actor = actor
         self._actor.processor = self
 
-        self._mailbox = mailbox
-        self._scheduler = scheduler
+        self._mailbox = Mailbox()
         self._state = None
+
+        self._message_statistics = None
 
     @property
     def pending_message_count(self):
@@ -69,7 +74,6 @@ class ActorProcessor(object):
             pass
 
         self._state = ACTOR_PROCESSOR_IDLE
-        self._scheduler.schedule(self)
 
     def stop(self):
         self._state = ACTOR_PROCESSOR_COMPLETED
@@ -87,3 +91,13 @@ class ActorProcessor(object):
 
     def _receive_message(self, message):
         self._mailbox.append(message)
+
+    def set_message_statistics(self, message_statistics):
+        self._message_statistics = message_statistics
+
+    def expected_next_runtime(self):
+        if self.pending_message_count == 0:
+            return NO_MESSAGES_RUNTIME
+
+        next_message = self._mailbox.first()
+        return self._message_statistics.get(type(next_message))

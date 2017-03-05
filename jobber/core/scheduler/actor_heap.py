@@ -17,27 +17,21 @@
 #
 # Thomas Quintana <quintana.thomas@gmail.com>
 
-from collections import deque
+import heapq
+from jobber.core.scheduler.runtime_dict import RuntimeDict
 
-class Mailbox(object):
+class ShortestJobNextHeap(object):
     """
-    Implements the Mailbox
-    Ensures FIFO
+    Implements Shortest Job Next logic as a heap.
+    Provides the Interface of a list.
     """
     def __init__(self):
-        self._box = deque()
+        self._heap = list()
+        self.message_statistics = RuntimeDict()
 
-    def append(self, message):
-        self._box.append(message)
+    def insert(self, actor_processor):
+        actor_processor.set_message_statistics(self.message_statistics)
+        heapq.heappush(self._heap, actor_processor)
 
     def first(self):
-        return self._box[0]
-
-    def pop(self):
-        return self._box.popleft()
-
-    def flush(self):
-        self._box.clear()
-
-    def __len__(self):
-        return len(self._box)
+        return self._heap[0]

@@ -17,7 +17,6 @@
 #
 # Thomas Quintana <quintana.thomas@gmail.com>
 
-import time
 import unittest
 
 from jobber.core.actor.mailbox import Mailbox
@@ -37,6 +36,12 @@ class MailboxTests(unittest.TestCase):
         self.mailbox.append(self.other_message)
         self.assertTrue(self.mailbox._box[0] == self.test_message)
         self.assertTrue(self.mailbox._box[1] == self.other_message)
+
+    def test_first(self):
+        self.mailbox.append(self.test_message)
+        self.mailbox.append(self.other_message)
+        first_message = self.mailbox.first()
+        self.assertTrue(first_message == self.test_message)
 
     def test_pop_from_empty_raises_indexerror(self):
         with self.assertRaises(IndexError):

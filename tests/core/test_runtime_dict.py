@@ -17,27 +17,29 @@
 #
 # Thomas Quintana <quintana.thomas@gmail.com>
 
-from collections import deque
+import unittest
 
-class Mailbox(object):
-    """
-    Implements the Mailbox
-    Ensures FIFO
-    """
-    def __init__(self):
-        self._box = deque()
+from jobber.core.scheduler.runtime_dict import RuntimeDict
 
-    def append(self, message):
-        self._box.append(message)
+class RuntimeDictTests(unittest.TestCase):
+    def setUp(self):
+        self.runtimeDict = RuntimeDict()
 
-    def first(self):
-        return self._box[0]
+    def test_get(self):
+        self.assertTrue(self.runtimeDict.get(MockMessage) == 0.0)
 
-    def pop(self):
-        return self._box.popleft()
+    def test_update(self):
+        self.runtimeDict.update(MockLongMessage, 3.0)
+        self.assertTrue(self.runtimeDict.get(MockLongMessage) == 3.0)
 
-    def flush(self):
-        self._box.clear()
+    def test_update_multiple_updates(self):
+        self.runtimeDict.update(MockMessage, 3.0)
+        self.runtimeDict.update(MockMessage, 1.0)
+        self.runtimeDict.update(MockMessage, 5.0)
+        self.assertTrue(self.runtimeDict.get(MockMessage) == 3.0)
 
-    def __len__(self):
-        return len(self._box)
+class MockMessage(object):
+    pass
+
+class MockLongMessage(object):
+    pass
