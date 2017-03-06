@@ -86,6 +86,27 @@ class ProcessorTests(unittest.TestCase):
         self.processor._message_statistics.update(MockOtherMessage, 2.0)
         self.assertTrue(self.processor.expected_next_runtime() == 4.0)
 
+class ProcessorCMPTests(unittest.TestCase):
+    def setUp(self):
+        self.mock_actor = create_autospec(Actor)
+        self.processor = ActorProcessor(self.mock_actor)
+        self.other_processor = ActorProcessor(self.mock_actor)
+
+        runtime_dict = RuntimeDict()
+        runtime_dict.update(MockMessage, 2.0)
+        runtime_dict.update(MockOtherMessage, 1.0)
+
+        self.processor.set_message_statistics(runtime_dict)
+        self.other_processor.set_message_statistics(runtime_dict)
+
+    def test_equality(self):
+        self.assertTrue(self.processor == self.processor)
+        self.assertTrue(self.processor != self.other_processor)
+
+    def test_message_order(self):
+        self.processor._receive_message(MockMessage())
+        self.assertTrue(self.processor < self.other_processor)
+
 class MockMessage(object):
     pass
 

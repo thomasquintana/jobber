@@ -101,3 +101,21 @@ class ActorProcessor(object):
 
         next_message = self._mailbox.first()
         return self._message_statistics.get(type(next_message))
+
+    def __eq__(self, other):
+        return id(self) == id(other)
+
+    def __ne__(self, other):
+        return id(self) != id(other)
+
+    def __lt__(self, other):
+        return self.expected_next_runtime() < other.expected_next_runtime()
+
+    def __le__(self, other):
+        return self.expected_next_runtime() <= other.expected_next_runtime()
+
+    def __gt__(self, other):
+        return self.expected_next_runtime() > other.expected_next_runtime()
+
+    def __ge__(self, other):
+        return self.expected_next_runtime() >= other.expected_next_runtime()
