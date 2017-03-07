@@ -57,11 +57,8 @@ class ActorProcessor(object):
     def state(self):
         return self._state
 
-    def execute(self):
-        """
-        Passes a message to the actor for execution
-        """
-        pass
+    def execute(self, message):
+        self._actor.receive(message)
 
     def start(self):
         try:
@@ -102,6 +99,12 @@ class ActorProcessor(object):
         next_message = self._mailbox.first()
         return self._message_statistics.get(type(next_message))
 
+    def pop_message(self):
+        return self._mailbox.pop()
+
+    def completed(self):
+        return self._state == ACTOR_PROCESSOR_COMPLETED
+
     def __eq__(self, other):
         return id(self) == id(other)
 
@@ -119,3 +122,6 @@ class ActorProcessor(object):
 
     def __ge__(self, other):
         return self.expected_next_runtime() >= other.expected_next_runtime()
+
+    def __len__(self):
+        return len(self._mailbox)

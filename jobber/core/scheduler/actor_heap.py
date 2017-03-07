@@ -17,8 +17,10 @@
 #
 # Thomas Quintana <quintana.thomas@gmail.com>
 
-import heapq
+import heapq as heap
 from jobber.core.scheduler.runtime_dict import RuntimeDict
+
+from jobber.core.exceptions.no_messages_exception import NoMessagesException
 
 class ShortestJobNextHeap(object):
     """
@@ -30,8 +32,36 @@ class ShortestJobNextHeap(object):
         self.message_statistics = RuntimeDict()
 
     def insert(self, actor_processor):
+        """
+        Inserts an actor into the heap
+        """
         actor_processor.set_message_statistics(self.message_statistics)
-        heapq.heappush(self._heap, actor_processor)
+        heap.heappush(self._heap, actor_processor)
 
     def first(self):
-        return self._heap[0]
+        try:
+            return self._heap[0]
+        except IndexError:
+            raise NoMessagesException
+
+    def pop(self):
+        first = self.first()
+        if first.pending_message_count == 0:
+            heap.heapreplace(self._heap, first)
+            raise NoMessagesException
+        elif first.completed():
+            self.remove(first)
+
+        message = first.pop_message()
+        heap.heapreplace(self._heap, first)
+        return (first, message)
+
+    def remove(self, processor):
+        self._heap.remove(processor)
+        heap.heapify(self._heap)
+
+    def __len__(self):
+        return len(self._heap)
+
+    def __getitem__(self, index):
+        return self._heap[index]
