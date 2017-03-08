@@ -17,29 +17,29 @@
 #
 # Thomas Quintana <quintana.thomas@gmail.com>
 
-class ActorRef(object):
+AVERAGE = 'average'
+CALLS = 'calls'
+
+class RuntimeDict(object):
     """
-    Positional Arguments:
-    mailbox   -- A reference to the referenced actor's mailbox.
-    url       -- A valid url to the referenced actor.
-    uuid      -- A universally unique identifier for the referenced actor.
+    Efficiently stores and updates message runtimes
     """
+    def __init__(self):
+        self._runtimes = {}
 
-    def __init__(self, mailbox, scheduler, url, uuid):
-        super(ActorRef, self).__init__()
-        self._mailbox = mailbox
-        self._scheduler = scheduler
-        self._url = url
-        self._urn = uuid
+    def get(self, _type):
+        if not _type in self._runtimes:
+            self._insert(_type)
+        return self._runtimes[_type][AVERAGE]
 
-    @property
-    def url(self):
-        return self._url
+    def update(self, _type, runtime):
+        if not _type in self._runtimes:
+            self._insert(_type)
 
-    def tell(self, message):
-        self._mailbox.append(message)
-        self._scheduler.notify()
+        record = self._runtimes[_type]
+        new_average = (record[AVERAGE]*record[CALLS] + runtime)/(record[CALLS]+1)
+        record[AVERAGE] = new_average
+        record[CALLS] += 1
 
-    @property
-    def urn(self):
-        return self._urn
+    def _insert(self, _type):
+        self._runtimes[_type] = {AVERAGE: 0.0, CALLS: 0}
