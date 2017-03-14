@@ -43,6 +43,9 @@ class Actor(object):
     def actor_system(self, actor_system):
         self._actor_system = actor_system
 
+    def tell(self, message):
+        self._actor_ref.tell(message)
+
     def receive(self, message):
         """
         This method processes incoming messages.
