@@ -19,7 +19,7 @@
 import socket
 from jobber.core.actor.actor import Actor
 
-class ClientSocketActor(Actor):
+class UDPSocketActor(Actor):
     def __init__(self, target_hostname, target_port):
         super(SocketActor, self).__init__()
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
