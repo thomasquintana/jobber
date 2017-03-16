@@ -22,7 +22,7 @@ from jobber.core.actor.actor import Actor
 class ClientSocketActor(Actor):
     def __init__(self, target_hostname, target_port):
         super(SocketActor, self).__init__()
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.target_hostname = target_hostname,
         self.target_port = target_port
 
@@ -34,17 +34,20 @@ class ClientSocketActor(Actor):
         self.socket.shutdown(1)
         self.socket.close()
 
-    def _send(self, payload):
+    def socket_send(self, payload):
+        done = True
         if len(payload):
+            done = False
             try:
                 sent = self.socket.send(payload)
             except socket.error:
                 # socket was not ready
                 sent = 0
             remaining_payload = payload[sent:]
-            self.tell(SocketSendMessage(remaining_payload))
 
-    def _receive(self):
+        return remaining_payload, done
+
+    def socket_receive(self):
         try:
             received = self.socket.recv()
             error = False
@@ -56,4 +59,4 @@ class ClientSocketActor(Actor):
         if len(received) or error:
             self.tell(SocketReceiveMessage())
 
-        return received
+        return received, error
