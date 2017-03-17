@@ -25,7 +25,7 @@ from jobber.constants import (ACTOR_PROCESSOR_COMPLETED, ACTOR_SCHEDULER_RUNNING
         ACTOR_SCHEDULER_STOPPED, ACTOR_SCHEDULER_STOPPING)
 
 from jobber.core.scheduler.scheduler import Scheduler
-from jobber.core.actor.actor_processor import ActorProcessor
+from jobber.core.actor.processor import ActorProcessor
 
 class SchedulerTests(unittest.TestCase):
     def setUp(self):
